@@ -12,30 +12,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 interface BidFormProps {
   currentBid: number;
   minBid: number;
+  successBid: boolean;
   onPlaceBid: (bidAmount: number) => void; // A função para disparar o evento SignalR
 }
 
 export default function BidForm({
   currentBid,
   minBid,
-  onPlaceBid,
+  successBid,
+  onPlaceBid,  
 }: BidFormProps) {
   const [bidAmount, setBidAmount] = useState<string>("");
   const [error, setError] = useState<string>("");
-  const [success, setSuccess] = useState(false); // Será ativado no futuro, após a confirmação do SignalR
+  //const [success, setSuccess] = useState(false); // Será ativado no futuro, após a confirmação do SignalR
 
   const handleBidChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setBidAmount(value);
     setError("");
-    setSuccess(false);
+    //setSuccess(false);
   };
 
   const handleSubmitBid = (e: React.FormEvent) => {
     debugger
     e.preventDefault();
     setError("");
-    setSuccess(false);
+    //setSuccess(false);
 
     const bid = Number.parseFloat(bidAmount); // 1. Validação: Valor numérico
 
@@ -67,10 +69,10 @@ export default function BidForm({
     onPlaceBid(bid);
 
     // 5. Feedback e Limpeza
-    setSuccess(true); // Assumimos sucesso momentaneamente, mas o ideal é que o 'success'
+    //setSuccess(true); // Assumimos sucesso momentaneamente, mas o ideal é que o 'success'
     // seja definido no componente pai APÓS a confirmação do Hub.
     setBidAmount("");
-    setTimeout(() => setSuccess(false), 3000);
+    //setTimeout(() => setSuccess(false), 3000);
   }; // Ajuste nas sugestões para garantir que sejam maiores que o lance atual
 
   const nextMinBid = currentBid + 1;
@@ -112,7 +114,7 @@ export default function BidForm({
                 </Alert>
             )}
 
-            {success && (
+            {successBid && (
                 <Alert className="bg-green-50 border-green-200">
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
                     <AlertDescription className="text-green-700">

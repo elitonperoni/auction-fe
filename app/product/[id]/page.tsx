@@ -79,6 +79,7 @@ export default function ProductPage() {
   const params = useParams();
   const productId = Number.parseInt(String(params?.id));
   const initialProduct = mockProductDetails[productId];
+  const [bidSuccess, setBidSuccess] = useState(false);
 
   const [product, setProduct] = useState<ProductDetail | undefined>(
     initialProduct
@@ -118,7 +119,7 @@ export default function ProductPage() {
         debugger;
         console.log("Conexão SignalR estabelecida.");
 
-        const groupName = `product_${product.id}`;
+        const groupName = `159c4b02-e5f8-4353-a046-540fe9280b9d`;
         newConnection
           .invoke("JoinAuctionGroup", groupName)
           .then(() => console.log(`Entrou no grupo ${groupName} com sucesso.`))
@@ -126,7 +127,7 @@ export default function ProductPage() {
 
         //✅ CORREÇÃO 1: Mantendo o nome do evento "SendBid" (conforme seu Hub)
         //✅ CORREÇÃO 2: Passando a referência da função handleNewBid
-        newConnection.on("SendBid", handleNewBid);
+        newConnection.on("ReceiveNewBid", handleNewBid);
       })
       .catch((err) =>
         console.error("Erro ao iniciar a conexão SignalR: ", err)
@@ -135,21 +136,21 @@ export default function ProductPage() {
     return () => {
       if (connection.current) {
         // ✅ CORREÇÃO 3: Desligando o listener com a referência correta
-        connection.current.off("SendBid", handleNewBid);
+        connection.current.off("ReceiveNewBid", handleNewBid);
         connection.current.stop();
       }
     };
   }, [product?.id]);
 
   const handleNewBid = (
-    receivedProductId: number,
+    receivedProductId: string,
     newBidAmount: number,
     newTotalBids: number,
     newBidderName: string, // Adicionado para o histórico
     newBidTime: string // Adicionado para o histórico
   ) => {
     debugger;
-    if (receivedProductId === product?.id) {
+    if (receivedProductId === "159c4b02-e5f8-4353-a046-540fe9280b9d") {
       setProduct((prevProduct) => {
         // Removido o tipo explícito 'ProductDetail | undefined' para simplificar
         if (!prevProduct) return undefined;
@@ -160,6 +161,11 @@ export default function ProductPage() {
           amount: newBidAmount,
           time: newBidTime,
         };
+
+        setBidSuccess(true); 
+    
+    // 3. Remover a notificação após 3 segundos
+       setTimeout(() => setBidSuccess(false), 3000);
 
         return {
           ...prevProduct,
@@ -174,7 +180,7 @@ export default function ProductPage() {
   const handlePlaceBid = (bidAmount: number) => {
     // Valores de exemplo que você pegaria de um formulário ou contexto de autenticação
     const user = "CurrentUserId_42"; // Substitua pelo ID/Nome do usuário logado
-    const groupName = `product_${product.id}`; // Define o grupo (o ID do produto)
+    const groupName = `159c4b02-e5f8-4353-a046-540fe9280b9d`; // Define o grupo (o ID do produto)
 
     // O Hub espera: SendBid(groupName, user, bidValue)
     if (
@@ -182,12 +188,14 @@ export default function ProductPage() {
       connection.current.state === signalR.HubConnectionState.Connected
     ) {
       debugger;
+      setBidSuccess(false);
       connection.current
         .invoke("SendBid", groupName, bidAmount.toString())
         .then(() => {
           console.log(
             `Lance de R$${bidAmount} enviado com sucesso para o grupo ${groupName}.`
           );
+
           // Você pode adicionar uma notificação de sucesso aqui
         })
         .catch((err) => {
@@ -360,6 +368,7 @@ export default function ProductPage() {
               <BidForm
                 currentBid={product.currentBid}
                 minBid={product.minBid}
+                successBid={bidSuccess}
                 onPlaceBid={handlePlaceBid}
               />{" "}
               {/* Passa o lance atualizado */}
