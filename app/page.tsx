@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 interface AuctionProduct {
-  id: number
+  id: string
   title: string
   image: string
   currentBid: number
@@ -21,7 +21,7 @@ interface AuctionProduct {
 
 const mockProducts: AuctionProduct[] = [
   {
-    id: 1,
+    id: '1',
     title: "Relógio Suíço Vintage",
     image: "/vintage-swiss-watch.jpg",
     currentBid: 450,
@@ -32,7 +32,7 @@ const mockProducts: AuctionProduct[] = [
     seller: "Colecionador Premium",
   },
   {
-    id: 2,
+    id: '4be91a78-05ff-493d-862b-4b054e70bfbb',
     title: "Câmera Fotográfica Profissional",
     image: "/professional-camera.png",
     currentBid: 1200,
@@ -43,7 +43,7 @@ const mockProducts: AuctionProduct[] = [
     seller: "Tech Store",
   },
   {
-    id: 3,
+    id: '3',
     title: "Joia de Ouro 18K",
     image: "/gold-jewelry.jpg",
     currentBid: 800,
@@ -54,7 +54,7 @@ const mockProducts: AuctionProduct[] = [
     seller: "Joalheria Fina",
   },
   {
-    id: 4,
+    id: '4',
     title: "Quadro de Arte Moderna",
     image: "/modern-art-painting.png",
     currentBid: 600,
@@ -65,7 +65,7 @@ const mockProducts: AuctionProduct[] = [
     seller: "Galeria Contemporânea",
   },
   {
-    id: 5,
+    id: '5',
     title: "Bolsa Designer Italiana",
     image: "/italian-designer-bag.jpg",
     currentBid: 350,
@@ -76,7 +76,7 @@ const mockProducts: AuctionProduct[] = [
     seller: "Fashion Luxury",
   },
   {
-    id: 6,
+    id: '6',
     title: "Livro Raro Primeira Edição",
     image: "/rare-first-edition-book.jpg",
     currentBid: 280,

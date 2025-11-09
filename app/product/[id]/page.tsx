@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ProductDetail {
-  id: number;
+  id: string;
   title: string;
   image: string;
   currentBid: number;
@@ -28,9 +28,9 @@ interface ProductDetail {
   bidHistory: Array<{ bidder: string; amount: number; time: string }>;
 }
 
-const mockProductDetails: Record<number, ProductDetail> = {
-  1: {
-    id: 1,
+const mockProductDetails: Record<string, ProductDetail> = {
+  '1': { 
+    id: '1',
     title: "Relógio Suíço Vintage",
     image: "/vintage-swiss-watch.jpg",
     currentBid: 450,
@@ -50,8 +50,8 @@ const mockProductDetails: Record<number, ProductDetail> = {
       { bidder: "Usuário789", amount: 400, time: "há 1 hora" },
     ],
   },
-  2: {
-    id: 2,
+  '4be91a78-05ff-493d-862b-4b054e70bfbb': {
+    id: '4be91a78-05ff-493d-862b-4b054e70bfbb',
     title: "Câmera Fotográfica Profissional",
     image: "/professional-camera.png",
     currentBid: 1200,
@@ -77,7 +77,7 @@ const mockProductDetails: Record<number, ProductDetail> = {
 export default function ProductPage() {
   const router = useRouter();
   const params = useParams();
-  const productId = Number.parseInt(String(params?.id));
+  const productId = String(params?.id);
   const initialProduct = mockProductDetails[productId];
   const [bidSuccess, setBidSuccess] = useState(false);
 
@@ -110,7 +110,7 @@ export default function ProductPage() {
       })
       .withAutomaticReconnect()
       .build();
-
+debugger
     connection.current = newConnection;
 
     newConnection
@@ -119,9 +119,9 @@ export default function ProductPage() {
         debugger;
         console.log("Conexão SignalR estabelecida.");
 
-        const groupName = `159c4b02-e5f8-4353-a046-540fe9280b9d`;
+        const groupName = String(productId);
         newConnection
-          .invoke("JoinAuctionGroup", groupName)
+          .invoke("JoinAuctionGroup", groupName )
           .then(() => console.log(`Entrou no grupo ${groupName} com sucesso.`))
           .catch((err) => console.error("Erro ao entrar no grupo:", err));
 
@@ -150,7 +150,7 @@ export default function ProductPage() {
     newBidTime: string // Adicionado para o histórico
   ) => {
     debugger;
-    if (receivedProductId === "159c4b02-e5f8-4353-a046-540fe9280b9d") {
+    if (receivedProductId === productId) {
       setProduct((prevProduct) => {
         // Removido o tipo explícito 'ProductDetail | undefined' para simplificar
         if (!prevProduct) return undefined;
@@ -180,7 +180,7 @@ export default function ProductPage() {
   const handlePlaceBid = (bidAmount: number) => {
     // Valores de exemplo que você pegaria de um formulário ou contexto de autenticação
     const user = "CurrentUserId_42"; // Substitua pelo ID/Nome do usuário logado
-    const groupName = `159c4b02-e5f8-4353-a046-540fe9280b9d`; // Define o grupo (o ID do produto)
+    const groupName = productId; // Define o grupo (o ID do produto)
 
     // O Hub espera: SendBid(groupName, user, bidValue)
     if (
