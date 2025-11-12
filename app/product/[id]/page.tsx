@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react"; // useRef adicionado
+import { useState, useEffect, useRef, useCallback } from "react"; // useRef adicionado
 import * as signalR from "@microsoft/signalr";
 import { useRouter, useParams } from "next/navigation";
 import { Clock, Heart, Share2, CheckCircle2 } from "lucide-react";
@@ -29,8 +29,8 @@ interface ProductDetail {
 }
 
 const mockProductDetails: Record<string, ProductDetail> = {
-  '1': { 
-    id: '1',
+  "1": {
+    id: "1",
     title: "Relógio Suíço Vintage",
     image: "/vintage-swiss-watch.jpg",
     currentBid: 450,
@@ -50,8 +50,8 @@ const mockProductDetails: Record<string, ProductDetail> = {
       { bidder: "Usuário789", amount: 400, time: "há 1 hora" },
     ],
   },
-  '4be91a78-05ff-493d-862b-4b054e70bfbb': {
-    id: '4be91a78-05ff-493d-862b-4b054e70bfbb',
+  "863ca937-a969-4938-af92-11dd82303420": {
+    id: "863ca937-a969-4938-af92-11dd82303420",
     title: "Câmera Fotográfica Profissional",
     image: "/professional-camera.png",
     currentBid: 1200,
@@ -101,81 +101,126 @@ export default function ProductPage() {
     );
   }
 
+  const handleNewBid = useCallback(
+    (
+      receivedProductId: string,
+      newBidAmount: number,
+      newTotalBids: number,
+      newBidderName: string, // Adicionado para o histórico
+      newBidTime: string // Adicionado para o histórico
+    ) => {
+      debugger;
+      if (receivedProductId === productId) {
+        setProduct((prevProduct) => {
+          // Removido o tipo explícito 'ProductDetail | undefined' para simplificar
+          if (!prevProduct) return undefined;
+
+          // Adicionando o novo lance ao histórico
+          const newBidEntry = {
+            bidder: newBidderName,
+            amount: newBidAmount,
+            time: newBidTime,
+          };
+
+          setBidSuccess(true);
+
+          // 3. Remover a notificação após 3 segundos
+          setTimeout(() => setBidSuccess(false), 3000);
+
+          return {
+            ...prevProduct,
+            currentBid: newBidAmount,
+            bids: newTotalBids,
+            bidHistory: [newBidEntry, ...prevProduct.bidHistory], // Atualiza o histórico
+          };
+        });
+      }
+    },
+    [productId]
+  );
+
   useEffect(() => {
-    const HUB_URL = "http://localhost:5000/auctionHub"; // OK
+    debugger;
+    
+    // ✅ PASSO 1: Flag para rastrear se o componente ainda está montado
+    let isMounted = true;
+    
+    const HUB_URL = "http://localhost:5000/auctionHub";
+
+    // Verificação síncrona: Se a conexão já existe, não faz nada.
+    // (Na Montagem 2, isso falha, pois a limpeza do Passo 2 define como null)
+    if (connection.current !== null) {
+      console.warn("Conexão já existe, pulando.");
+      return;
+    }
 
     const newConnection = new signalR.HubConnectionBuilder()
       .withUrl(HUB_URL, {
-        accessTokenFactory: () => 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJkZXZlbG9wZXJzIiwiaXNzIjoiY2xlYW4tYXJjaGl0ZWN0dXJlIiwiZXhwIjoxNzYxOTY3MzYyLCJzdWIiOiI5NjRkMTFmNS1jZWQyLTQ4OGYtYmNlMi1kM2U4MGU2YzA2OTMiLCJlbWFpbCI6ImVsaXRvbkBlbWFpbC5jb20iLCJpYXQiOjE3NjE5NjM3NjIsIm5iZiI6MTc2MTk2Mzc2Mn0.vv7LHWo3tRQ1k0rGeOWJPQkJiHaO1nCLG7bqJC3UCvs', // 👈 Envia o token
+        accessTokenFactory: () => 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJkZXZlbG9wZXJzIiwiaXNzIjoiY2xlYW4tYXJjaGl0ZWN0dXJlIiwiZXhwIjoxNzYxOTY3MzYyLCJzdWIiOiI5NjRkMTFmNS1jZWQyLTQ4OGYtYmNlMi1kM2U4MGU2YzA2OTMiLCJlbWFpbCI6ImVsaXRvbkBlbWFpbC5jb20iLCJpYXQiOjE3NjE5NjM3NjIsIm5iZiI6MTc2MTk2Mzc2Mn0.vv7LHWo3tRQ1k0rGeOWJPQkJiHaO1nCLG7bqJC3UCvs', 
       })
       .withAutomaticReconnect()
       .build();
-debugger
+      
+    debugger;
     connection.current = newConnection;
 
     newConnection
       .start()
       .then(() => {
         debugger;
+        
+        // ✅ PASSO 2: A VERIFICAÇÃO CRÍTICA
+        // Se !isMounted for verdadeiro, significa que a função de limpeza 
+        // (do "Unmount 1" do StrictMode) já rodou.
+        // Nós simplesmente não fazemos nada e evitamos o erro.
+        if (!isMounted) {
+          console.log("Start() concluído, mas componente foi desmontado. Ignorando.");
+          return; 
+        }
+
+        // Se chegamos aqui, é uma montagem válida (a Montagem 2)
         console.log("Conexão SignalR estabelecida.");
-
         const groupName = String(productId);
+        
         newConnection
-          .invoke("JoinAuctionGroup", groupName )
+          .invoke("JoinAuctionGroup", groupName)
           .then(() => console.log(`Entrou no grupo ${groupName} com sucesso.`))
-          .catch((err) => console.error("Erro ao entrar no grupo:", err));
+          .catch((err) => console.log("Erro ao entrar no grupo:", err));
 
-        //✅ CORREÇÃO 1: Mantendo o nome do evento "SendBid" (conforme seu Hub)
-        //✅ CORREÇÃO 2: Passando a referência da função handleNewBid
         newConnection.on("ReceiveNewBid", handleNewBid);
       })
-      .catch((err) =>
-        console.error("Erro ao iniciar a conexão SignalR: ", err)
-      );
+      .catch((err) => {
+        // O start() pode falhar se o stop() for chamado antes
+        // Só exibe o erro se o componente ainda estiver "oficialmente" montado
+        if (isMounted) {
+            console.log("Erro ao iniciar a conexão SignalR: ", err);
+        } else {
+            console.log("Erro de start() ignorado (componente desmontado).", err.message);
+        }
+      });
 
+    // A função de limpeza (roda na "Desmontagem 1" e na saída real da página)
     return () => {
+      debugger;
+      
+      // ✅ PASSO 3: Define a flag para false
+      isMounted = false;
+      
       if (connection.current) {
-        // ✅ CORREÇÃO 3: Desligando o listener com a referência correta
+        console.log("Limpando conexão SignalR anterior...");
+        
         connection.current.off("ReceiveNewBid", handleNewBid);
-        connection.current.stop();
+        
+        // Nós podemos tentar parar, mas o mais importante é resetar o ref
+        connection.current.stop()
+          .then(() => console.log("Conexão parada."))
+          .catch((err) => console.log("Erro ao parar conexão (pode ser normal durante o start):", err.message));
+
+        // Reseta o ref para que a "Montagem 2" possa criar uma nova conexão
+        connection.current = null;
       }
     };
-  }, [product?.id]);
-
-  const handleNewBid = (
-    receivedProductId: string,
-    newBidAmount: number,
-    newTotalBids: number,
-    newBidderName: string, // Adicionado para o histórico
-    newBidTime: string // Adicionado para o histórico
-  ) => {
-    debugger;
-    if (receivedProductId === productId) {
-      setProduct((prevProduct) => {
-        // Removido o tipo explícito 'ProductDetail | undefined' para simplificar
-        if (!prevProduct) return undefined;
-
-        // Adicionando o novo lance ao histórico
-        const newBidEntry = {
-          bidder: newBidderName,
-          amount: newBidAmount,
-          time: newBidTime,
-        };
-
-        setBidSuccess(true); 
-    
-    // 3. Remover a notificação após 3 segundos
-       setTimeout(() => setBidSuccess(false), 3000);
-
-        return {
-          ...prevProduct,
-          currentBid: newBidAmount,
-          bids: newTotalBids,
-          bidHistory: [newBidEntry, ...prevProduct.bidHistory], // Atualiza o histórico
-        };
-      });
-    }
-  };
+  }, [productId, handleNewBid]);
 
   const handlePlaceBid = (bidAmount: number) => {
     // Valores de exemplo que você pegaria de um formulário ou contexto de autenticação
@@ -199,7 +244,7 @@ debugger
           // Você pode adicionar uma notificação de sucesso aqui
         })
         .catch((err) => {
-          console.error("Erro ao enviar o lance via SignalR:", err);
+          console.log("Erro ao enviar o lance via SignalR:", err);
           // Exiba uma mensagem de erro ao usuário (ex: lance muito baixo)
         });
     } else {
