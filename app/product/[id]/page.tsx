@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react"; // useRef adicionado
+import { useState, useEffect, useRef, useCallback } from "react";
 import * as signalR from "@microsoft/signalr";
 import { useRouter, useParams } from "next/navigation";
-import { Clock, Heart, Share2, CheckCircle2 } from "lucide-react";
-import BidForm from "../../../components/bid-form"; // Corrigindo o caminho do componente
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Clock, Heart, Share2, CheckCircle2, History } from "lucide-react";
+import BidForm from "../../../components/bid-form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import ToastSuccess from "@/components/Toast/toastNotificationSuccess";
+import ToastError from "@/components/Toast/toastNotificationError";
 
 interface ProductDetail {
   id: string;
@@ -72,22 +74,20 @@ const mockProductDetails: Record<string, ProductDetail> = {
   },
 };
 
-// ... (interface ProductDetail e mockProductDetails)
-
 export default function ProductPage() {
   const router = useRouter();
   const params = useParams();
   const productId = String(params?.id);
   const initialProduct = mockProductDetails[productId];
+
   const [bidSuccess, setBidSuccess] = useState(false);
 
   const [product, setProduct] = useState<ProductDetail | undefined>(
     initialProduct
   );
   const [isFavorite, setIsFavorite] = useState(false);
-  const connection = useRef<signalR.HubConnection | null>(null); // Corrigido para usar useRef
+  const connection = useRef<signalR.HubConnection | null>(null);
 
-  // Lógica para Produto não encontrado (deve ser antes de usar 'product' abaixo)
   if (!product) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -106,82 +106,67 @@ export default function ProductPage() {
       receivedProductId: string,
       newBidAmount: number,
       newTotalBids: number,
-      newBidderName: string, // Adicionado para o histórico
-      newBidTime: string // Adicionado para o histórico
+      newBidderName: string,
+      newBidTime: string
     ) => {
-      debugger;
       if (receivedProductId === productId) {
         setProduct((prevProduct) => {
-          // Removido o tipo explícito 'ProductDetail | undefined' para simplificar
           if (!prevProduct) return undefined;
 
-          // Adicionando o novo lance ao histórico
           const newBidEntry = {
             bidder: newBidderName,
             amount: newBidAmount,
             time: newBidTime,
           };
 
+          ToastSuccess("Lance processado com sucesso!");          
           setBidSuccess(true);
-
-          // 3. Remover a notificação após 3 segundos
           setTimeout(() => setBidSuccess(false), 3000);
 
           return {
             ...prevProduct,
             currentBid: newBidAmount,
             bids: newTotalBids,
-            bidHistory: [newBidEntry, ...prevProduct.bidHistory], // Atualiza o histórico
+            bidHistory: [newBidEntry, ...prevProduct.bidHistory],
           };
         });
       }
     },
-    [productId]
+    [productId] // Dependências corretas
   );
 
   useEffect(() => {
-    debugger;
-    
-    // ✅ PASSO 1: Flag para rastrear se o componente ainda está montado
     let isMounted = true;
-    
-    const HUB_URL = "http://localhost:5000/auctionHub";
+    const HUB_URL = process.env.NEXT_PUBLIC_SIGNALR_HUB_URL;
 
-    // Verificação síncrona: Se a conexão já existe, não faz nada.
-    // (Na Montagem 2, isso falha, pois a limpeza do Passo 2 define como null)
     if (connection.current !== null) {
       console.warn("Conexão já existe, pulando.");
       return;
     }
 
     const newConnection = new signalR.HubConnectionBuilder()
-      .withUrl(HUB_URL, {
-        accessTokenFactory: () => 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJkZXZlbG9wZXJzIiwiaXNzIjoiY2xlYW4tYXJjaGl0ZWN0dXJlIiwiZXhwIjoxNzYxOTY3MzYyLCJzdWIiOiI5NjRkMTFmNS1jZWQyLTQ4OGYtYmNlMi1kM2U4MGU2YzA2OTMiLCJlbWFpbCI6ImVsaXRvbkBlbWFpbC5jb20iLCJpYXQiOjE3NjE5NjM3NjIsIm5iZiI6MTc2MTk2Mzc2Mn0.vv7LHWo3tRQ1k0rGeOWJPQkJiHaO1nCLG7bqJC3UCvs', 
+      .withUrl(HUB_URL ?? "", {
+        accessTokenFactory: () =>
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJkZXZlbG9wZXJzIiwiaXNzIjoiY2xlYW4tYXJjaGl0ZWN0dXJlIiwiZXhwIjoxNzYyOTk5NTQ5LCJzdWIiOiI5NjRkMTFmNS1jZWQyLTQ4OGYtYmNlMi1kM2U4MGU2YzA2OTMiLCJlbWFpbCI6ImVsaXRvbkBlbWFpbC5jb20iLCJuYW1lIjoiZWxpdG9uIiwiaWF0IjoxNzYyOTk1OTQ5LCJuYmYiOjE3NjI5OTU5NDl9.30qRgOdkYBss2D_3UNRXChqmyTotHA-D9iNuuSYYTgc",
       })
       .withAutomaticReconnect()
       .build();
-      
-    debugger;
+
     connection.current = newConnection;
 
     newConnection
       .start()
       .then(() => {
-        debugger;
-        
-        // ✅ PASSO 2: A VERIFICAÇÃO CRÍTICA
-        // Se !isMounted for verdadeiro, significa que a função de limpeza 
-        // (do "Unmount 1" do StrictMode) já rodou.
-        // Nós simplesmente não fazemos nada e evitamos o erro.
         if (!isMounted) {
-          console.log("Start() concluído, mas componente foi desmontado. Ignorando.");
-          return; 
+          console.log(
+            "Start() concluído, mas componente foi desmontado. Ignorando."
+          );
+          return;
         }
 
-        // Se chegamos aqui, é uma montagem válida (a Montagem 2)
         console.log("Conexão SignalR estabelecida.");
         const groupName = String(productId);
-        
+
         newConnection
           .invoke("JoinAuctionGroup", groupName)
           .then(() => console.log(`Entrou no grupo ${groupName} com sucesso.`))
@@ -190,49 +175,46 @@ export default function ProductPage() {
         newConnection.on("ReceiveNewBid", handleNewBid);
       })
       .catch((err) => {
-        // O start() pode falhar se o stop() for chamado antes
-        // Só exibe o erro se o componente ainda estiver "oficialmente" montado
         if (isMounted) {
-            console.log("Erro ao iniciar a conexão SignalR: ", err);
+          console.log("Erro ao iniciar a conexão SignalR: ", err);
         } else {
-            console.log("Erro de start() ignorado (componente desmontado).", err.message);
+          console.log(
+            "Erro de start() ignorado (componente desmontado).",
+            err.message
+          );
         }
       });
 
-    // A função de limpeza (roda na "Desmontagem 1" e na saída real da página)
     return () => {
-      debugger;
-      
-      // ✅ PASSO 3: Define a flag para false
       isMounted = false;
-      
+
       if (connection.current) {
         console.log("Limpando conexão SignalR anterior...");
-        
-        connection.current.off("ReceiveNewBid", handleNewBid);
-        
-        // Nós podemos tentar parar, mas o mais importante é resetar o ref
-        connection.current.stop()
-          .then(() => console.log("Conexão parada."))
-          .catch((err) => console.log("Erro ao parar conexão (pode ser normal durante o start):", err.message));
 
-        // Reseta o ref para que a "Montagem 2" possa criar uma nova conexão
+        connection.current.off("ReceiveNewBid", handleNewBid);
+
+        connection.current
+          .stop()
+          .then(() => console.log("Conexão parada."))
+          .catch((err) =>
+            console.log(
+              "Erro ao parar conexão (pode ser normal durante o start):",
+              err.message
+            )
+          );
+
         connection.current = null;
       }
     };
   }, [productId, handleNewBid]);
 
   const handlePlaceBid = (bidAmount: number) => {
-    // Valores de exemplo que você pegaria de um formulário ou contexto de autenticação
-    const user = "CurrentUserId_42"; // Substitua pelo ID/Nome do usuário logado
-    const groupName = productId; // Define o grupo (o ID do produto)
+    const groupName = productId;
 
-    // O Hub espera: SendBid(groupName, user, bidValue)
     if (
       connection.current &&
       connection.current.state === signalR.HubConnectionState.Connected
     ) {
-      debugger;
       setBidSuccess(false);
       connection.current
         .invoke("SendBid", groupName, bidAmount.toString())
@@ -240,27 +222,20 @@ export default function ProductPage() {
           console.log(
             `Lance de R$${bidAmount} enviado com sucesso para o grupo ${groupName}.`
           );
-
-          // Você pode adicionar uma notificação de sucesso aqui
         })
         .catch((err) => {
-          console.log("Erro ao enviar o lance via SignalR:", err);
-          // Exiba uma mensagem de erro ao usuário (ex: lance muito baixo)
+          ToastError("Falha ao Enviar Lance 🛑");
         });
-    } else {
-      console.warn(
-        "Conexão SignalR não está estabelecida. Não foi possível enviar o lance."
-      );
-      // Informe o usuário que a conexão está indisponível
+    } else {      
+       ToastError("Não foi possível enviar o lance. Falha de conexão");       
     }
   };
 
   return (
     <main className="min-h-screen bg-background">
-      {/* ... header e layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Product Image and Details */}
           <div className="lg:col-span-2">
             {/* Product Image */}
             <Card className="overflow-hidden mb-6 bg-card border-border">
@@ -284,7 +259,22 @@ export default function ProductPage() {
 
             {/* Product Info with Tabs */}
             <Tabs defaultValue="details" className="w-full">
-              {/* ... TabsList */}
+              {/* 1. Inclusão da TabsList para navegação */}
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger
+                  value="details"
+                  className="flex items-center gap-2"
+                >
+                  <CheckCircle2 className="h-4 w-4" /> Detalhes do Produto
+                </TabsTrigger>
+                <TabsTrigger
+                  value="history"
+                  className="flex items-center gap-2"
+                >
+                  <History className="h-4 w-4" /> Histórico de Lances
+                </TabsTrigger>
+              </TabsList>
+
               <TabsContent value="details" className="space-y-6">
                 <Card className="p-6 bg-card border-border">
                   <h1 className="text-3xl font-bold text-foreground mb-4">
@@ -318,11 +308,9 @@ export default function ProductPage() {
                       </p>
                       <p className="font-semibold text-foreground">
                         {product.bids}
-                      </p>{" "}
-                      {/* Usa o estado atualizado */}
+                      </p>
                     </div>
                   </div>
-                  {/* ... Descrição e Vendedor */}
                   <div className="mb-6">
                     <h3 className="font-bold text-foreground mb-3">
                       Descrição
@@ -353,40 +341,44 @@ export default function ProductPage() {
                 </Card>
               </TabsContent>
 
-              {/* ... TabsContent history */}
+              {/* 2. Seção Histórico de Lances Completa */}
               <TabsContent value="history">
                 <Card className="p-6 bg-card border-border">
-                  <h3 className="font-bold text-foreground mb-4">
+                  <h3 className="text-2xl font-bold text-foreground mb-4">
                     Histórico de Lances
                   </h3>
-                  <div className="space-y-3">
-                    {/* Note: O bidHistory não será atualizado automaticamente com esta implementação, 
-                        apenas o currentBid e bids. Uma implementação completa exigiria a busca do histórico
-                        ou o envio dos dados do novo lance (incluindo bidder e time) via SignalR.
-                        Por enquanto, ele reflete o mock inicial.
-                    */}
-                    {product.bidHistory.map(
-                      (
-                        bid: { bidder: string; time: string; amount: number },
-                        index: number
-                      ) => (
-                        <div
-                          key={`${bid.bidder}-${index}`}
-                          className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border"
-                        >
-                          <div>
-                            <p className="font-semibold text-foreground">
-                              {bid.bidder}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {bid.time}
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                    {product.bidHistory.length > 0 ? (
+                      product.bidHistory.map(
+                        (
+                          bid: { bidder: string; time: string; amount: number },
+                          index: number
+                        ) => (
+                          <div
+                            key={`${bid.bidder}-${index}`}
+                            className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border"
+                          >
+                            <div>
+                              <p className="font-semibold text-foreground">
+                                {bid.bidder}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {bid.time}
+                              </p>
+                            </div>
+                            <p className="font-bold text-foreground text-lg">
+                              R$ {bid.amount.toLocaleString("pt-BR")}
                             </p>
                           </div>
-                          <p className="font-bold text-foreground text-lg">
-                            R$ {bid.amount.toLocaleString("pt-BR")}
-                          </p>
-                        </div>
+                        )
                       )
+                    ) : (
+                      <Alert className="bg-secondary/20 border-secondary">
+                        <AlertDescription>
+                          Ainda não há lances para este produto. Seja o primeiro
+                          a dar um lance!
+                        </AlertDescription>
+                      </Alert>
                     )}
                   </div>
                 </Card>
@@ -403,8 +395,7 @@ export default function ProductPage() {
                 </p>
                 <p className="text-4xl font-bold text-primary mb-2">
                   R$ {product.currentBid.toLocaleString("pt-BR")}
-                </p>{" "}
-                {/* Usa o estado atualizado */}
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Mínimo: R$ {product.minBid.toLocaleString("pt-BR")}
                 </p>
@@ -415,9 +406,8 @@ export default function ProductPage() {
                 minBid={product.minBid}
                 successBid={bidSuccess}
                 onPlaceBid={handlePlaceBid}
-              />{" "}
-              {/* Passa o lance atualizado */}
-              {/* ... Action Buttons e Info Box */}
+              />
+              {/* Action Buttons e Info Box */}
               <div className="flex gap-2 mt-4">
                 <Button
                   onClick={() => setIsFavorite(!isFavorite)}

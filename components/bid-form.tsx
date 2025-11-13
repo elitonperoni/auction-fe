@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface BidFormProps {
   currentBid: number;
@@ -24,8 +23,6 @@ export default function BidForm({
 }: BidFormProps) {
   const [bidAmount, setBidAmount] = useState<string>("");
   const [error, setError] = useState<string>("");
-  //const [success, setSuccess] = useState(false); // Será ativado no futuro, após a confirmação do SignalR
-
   const handleBidChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setBidAmount(value);
@@ -37,14 +34,17 @@ export default function BidForm({
     debugger
     e.preventDefault();
     setError("");
-    //setSuccess(false);
 
     const bid = Number.parseFloat(bidAmount); // 1. Validação: Valor numérico
 
-    if (!bidAmount || isNaN(bid)) {
-      setError("Digite um valor válido");
-      return;
-    }
+//     if (!bidAmount || isNaN(bid)) {
+//       toast({
+//         title: "Erro de Lance Inválido",
+//         description: "Por favor, digite um valor numérico válido para o lance.",
+//         variant: "destructive",
+//       });
+//       return;
+//     }
 
     // 2. Validação: Checa se é maior que o lance atual
     if (bid <= currentBid) {

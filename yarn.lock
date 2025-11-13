@@ -1630,6 +1630,11 @@ next@16.0.0:
     "@next/swc-win32-x64-msvc" "16.0.0"
     sharp "^0.34.4"
 
+nextjs-toast-notify@^1.57.0:
+  version "1.57.0"
+  resolved "https://registry.yarnpkg.com/nextjs-toast-notify/-/nextjs-toast-notify-1.57.0.tgz#fa02ccb6e5475ce6e5bfcc720031e8ef44438be3"
+  integrity sha512-m8RqEfBI8P9OAAaXLOCeBU8xlfwaRoKJ10RGveW7lL3ROEsdJaU/BP+c9SBTgDBaI6HD0MS68oEoTzI5FgyO4g==
+
 node-fetch@^2.6.7:
   version "2.7.0"
   resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.7.0.tgz#d0f0fa6e3e2dc1d27efcd8ad99d550bda94d187d"

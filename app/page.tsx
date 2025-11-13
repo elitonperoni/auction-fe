@@ -32,7 +32,7 @@ const mockProducts: AuctionProduct[] = [
     seller: "Colecionador Premium",
   },
   {
-    id: '4be91a78-05ff-493d-862b-4b054e70bfbb',
+    id: '863ca937-a969-4938-af92-11dd82303420',
     title: "Câmera Fotográfica Profissional",
     image: "/professional-camera.png",
     currentBid: 1200,
