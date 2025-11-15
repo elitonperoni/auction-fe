@@ -3,9 +3,9 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Clock, Gavel, Heart } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "../../components/ui/button"
+import { Card } from "../../components/ui/card"
+import { Badge } from "../../components/ui/badge"
 
 interface AuctionProduct {
   id: string
@@ -97,21 +97,7 @@ export default function Home() {
     selectedCategory === "Todos" ? mockProducts : mockProducts.filter((p) => p.category === selectedCategory)
 
   return (
-    <main className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-primary border-b border-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary-foreground p-2 rounded-lg">
-                <Gavel className="w-6 h-6 text-primary" />
-              </div>
-              <h1 className="text-2xl font-bold text-primary-foreground">LeilãoMax</h1>
-            </div>
-            <Button className="bg-primary-foreground text-primary hover:bg-secondary font-semibold">Meus Lances</Button>
-          </div>
-        </div>
-      </header>
+    <main className="min-h-screen bg-background">     
 
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-16">

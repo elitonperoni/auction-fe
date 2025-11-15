@@ -4,14 +4,20 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import * as signalR from "@microsoft/signalr";
 import { useRouter, useParams } from "next/navigation";
 import { Clock, Heart, Share2, CheckCircle2, History } from "lucide-react";
-import BidForm from "../../../components/bid-form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import ToastSuccess from "@/components/Toast/toastNotificationSuccess";
-import ToastError from "@/components/Toast/toastNotificationError";
+import { Button } from "@/src/components/ui/button";
+import ToastSuccess from "@/src/components/Toast/toastNotificationSuccess";
+import ToastError from "@/src/components/Toast/toastNotificationError";
+import { Badge } from "@/src/components/ui/badge";
+import { Card } from "@/src/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/src/components/ui/tabs";
+import { Alert, AlertDescription } from "@/src/components/ui/alert";
+import { getSignalRConnection } from "@/src/api/hub";
+import BidForm from "@/src/components/bid-form";
 
 interface ProductDetail {
   id: string;
@@ -86,7 +92,6 @@ export default function ProductPage() {
     initialProduct
   );
   const [isFavorite, setIsFavorite] = useState(false);
-  const connection = useRef<signalR.HubConnection | null>(null);
 
   if (!product) {
     return (
@@ -107,7 +112,8 @@ export default function ProductPage() {
       newBidAmount: number,
       newTotalBids: number,
       newBidderName: string,
-      newBidTime: string
+      newBidTime: string,
+      isBidOwner: boolean
     ) => {
       if (receivedProductId === productId) {
         setProduct((prevProduct) => {
@@ -117,11 +123,8 @@ export default function ProductPage() {
             bidder: newBidderName,
             amount: newBidAmount,
             time: newBidTime,
-          };
-
-          ToastSuccess("Lance processado com sucesso!");          
-          setBidSuccess(true);
-          setTimeout(() => setBidSuccess(false), 3000);
+          };          
+          showNotifyBid(isBidOwner, newBidderName, newBidAmount);
 
           return {
             ...prevProduct,
@@ -136,87 +139,51 @@ export default function ProductPage() {
   );
 
   useEffect(() => {
-    let isMounted = true;
-    const HUB_URL = process.env.NEXT_PUBLIC_SIGNALR_HUB_URL;
+    const groupName = String(productId);
+    const connection = getSignalRConnection();
 
-    if (connection.current !== null) {
-      console.warn("Conexão já existe, pulando.");
-      return;
-    }
-
-    const newConnection = new signalR.HubConnectionBuilder()
-      .withUrl(HUB_URL ?? "", {
-        accessTokenFactory: () =>
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJkZXZlbG9wZXJzIiwiaXNzIjoiY2xlYW4tYXJjaGl0ZWN0dXJlIiwiZXhwIjoxNzYyOTk5NTQ5LCJzdWIiOiI5NjRkMTFmNS1jZWQyLTQ4OGYtYmNlMi1kM2U4MGU2YzA2OTMiLCJlbWFpbCI6ImVsaXRvbkBlbWFpbC5jb20iLCJuYW1lIjoiZWxpdG9uIiwiaWF0IjoxNzYyOTk1OTQ5LCJuYmYiOjE3NjI5OTU5NDl9.30qRgOdkYBss2D_3UNRXChqmyTotHA-D9iNuuSYYTgc",
-      })
-      .withAutomaticReconnect()
-      .build();
-
-    connection.current = newConnection;
-
-    newConnection
-      .start()
-      .then(() => {
-        if (!isMounted) {
-          console.log(
-            "Start() concluído, mas componente foi desmontado. Ignorando."
-          );
-          return;
+    const setupSignalR = async () => {
+      try {
+        if (connection.state === signalR.HubConnectionState.Disconnected) {
+          console.log("Iniciando conexão SignalR global...");
+          await connection.start();
+          console.log("Conexão SignalR estabelecida.");
         }
 
-        console.log("Conexão SignalR estabelecida.");
-        const groupName = String(productId);
+        await connection.invoke("JoinAuctionGroup", groupName);
+        console.log(`Entrou no grupo ${groupName} com sucesso.`);
 
-        newConnection
-          .invoke("JoinAuctionGroup", groupName)
-          .then(() => console.log(`Entrou no grupo ${groupName} com sucesso.`))
-          .catch((err) => console.log("Erro ao entrar no grupo:", err));
+        connection.on("ReceiveNewBid", handleNewBid);
+      } catch (err) {
+        console.error("Erro ao configurar SignalR no componente:", err);
+      }
+    };
 
-        newConnection.on("ReceiveNewBid", handleNewBid);
-      })
-      .catch((err) => {
-        if (isMounted) {
-          console.log("Erro ao iniciar a conexão SignalR: ", err);
-        } else {
-          console.log(
-            "Erro de start() ignorado (componente desmontado).",
-            err.message
-          );
-        }
-      });
+    setupSignalR();
 
     return () => {
-      isMounted = false;
+      console.log(`Limpando ouvintes e grupo ${groupName}...`);
+      connection.off("ReceiveNewBid", handleNewBid);
 
-      if (connection.current) {
-        console.log("Limpando conexão SignalR anterior...");
-
-        connection.current.off("ReceiveNewBid", handleNewBid);
-
-        connection.current
-          .stop()
-          .then(() => console.log("Conexão parada."))
-          .catch((err) =>
-            console.log(
-              "Erro ao parar conexão (pode ser normal durante o start):",
-              err.message
-            )
-          );
-
-        connection.current = null;
+      if (connection.state === signalR.HubConnectionState.Connected) {
+        connection
+          .invoke("LeaveAuctionGroup", groupName)
+          .then(() => console.log(`Saiu do grupo ${groupName} com sucesso.`))
+          .catch((err) => console.log("Erro ao sair do grupo:", err));
       }
     };
   }, [productId, handleNewBid]);
 
   const handlePlaceBid = (bidAmount: number) => {
     const groupName = productId;
+    const connection = getSignalRConnection();
 
     if (
-      connection.current &&
-      connection.current.state === signalR.HubConnectionState.Connected
+      connection &&
+      connection.state === signalR.HubConnectionState.Connected
     ) {
       setBidSuccess(false);
-      connection.current
+      connection
         .invoke("SendBid", groupName, bidAmount.toString())
         .then(() => {
           console.log(
@@ -226,15 +193,14 @@ export default function ProductPage() {
         .catch((err) => {
           ToastError("Falha ao Enviar Lance 🛑");
         });
-    } else {      
-       ToastError("Não foi possível enviar o lance. Falha de conexão");       
+    } else {
+      ToastError("Não foi possível enviar o lance. Falha de conexão");
     }
   };
 
   return (
     <main className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             {/* Product Image */}
@@ -438,4 +404,24 @@ export default function ProductPage() {
       </div>
     </main>
   );
+
+  function showNotifyBid(
+    isBidOwner: boolean,
+    newBidderName: string,
+    newBidAmount: number
+  ) {
+    if (isBidOwner) {
+      ToastSuccess(`Lance processado com sucesso!`);
+      setBidSuccess(true);
+      setTimeout(() => setBidSuccess(false), 3000);
+      return;
+    }
+
+    ToastSuccess(
+      `Lance superado por ${newBidderName} R$ ${newBidAmount.toLocaleString(
+        "pt-BR",
+        { style: "currency", currency: "BRL" }
+      )}`
+    );
+  }
 }
