@@ -80,18 +80,23 @@ const mockProductDetails: Record<string, ProductDetail> = {
   },
 };
 
+interface BidEntry {
+  bidder: string;
+  amount: number;
+  time: string;
+}
+
 export default function ProductPage() {
   const router = useRouter();
   const params = useParams();
   const productId = String(params?.id);
   const initialProduct = mockProductDetails[productId];
-
   const [bidSuccess, setBidSuccess] = useState(false);
-
   const [product, setProduct] = useState<ProductDetail | undefined>(
     initialProduct
   );
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
   if (!product) {
     return (
@@ -106,6 +111,8 @@ export default function ProductPage() {
     );
   }
 
+ 
+  /** Handler para "ReceiveNewBid": Quando um novo lance chega. */
   const handleNewBid = useCallback(
     (
       receivedProductId: string,
@@ -119,82 +126,173 @@ export default function ProductPage() {
         setProduct((prevProduct) => {
           if (!prevProduct) return undefined;
 
-          const newBidEntry = {
+          const newBidEntry: BidEntry = {
             bidder: newBidderName,
             amount: newBidAmount,
             time: newBidTime,
-          };          
+          };
           showNotifyBid(isBidOwner, newBidderName, newBidAmount);
 
           return {
             ...prevProduct,
             currentBid: newBidAmount,
             bids: newTotalBids,
-            bidHistory: [newBidEntry, ...prevProduct.bidHistory],
+            bidHistory: [newBidEntry, ...prevProduct.bidHistory], // Adiciona no topo
           };
         });
       }
     },
-    [productId] // Dependências corretas
+    [productId] 
   );
 
+  /** Handler para "FullAuctionState": Recebe o estado completo pós-reconexão. */
+  const handleFullStateUpdate = useCallback((fullState: ProductDetail) => {
+    debugger
+    console.log("Estado completo recebido (pós-reconexão):", fullState);
+    // Substitui o estado, garantindo a reconciliação
+    //setProduct(fullState);
+    setIsReconnecting(false); // Parou de reconectar
+  }, []); // Sem dependências, pois só usa 'setProduct' e 'setIsReconnecting'
+
+  // ---
+  // 5. HANDLERS DE CICLO DE VIDA (com useCallback)
+  // ---
+
+  /** Handler para 'onreconnected': Quando a conexão é re-estabelecida. */
+  const handleReconnect = useCallback(
+    (connectionId?: string) => {
+      debugger
+      const groupName = String(productId);
+      console.log(`[${groupName}] Reconectado com ID: ${connectionId}`);
+      setIsReconnecting(false);
+
+      // IIFE para rodar código async dentro de um handler síncrono
+      (async () => {
+        try {
+          const connection = getSignalRConnection();
+          console.log(`[${groupName}] Re-entrando no grupo...`);
+          await connection.invoke("JoinAuctionGroup", groupName);
+
+          console.log(`[${groupName}] Sincronizando estado...`);
+          await connection.invoke("SyncAuctionState", groupName);
+        } catch (err) {
+          console.error(`[${groupName}] Erro ao re-sincronizar:`, err);
+        }
+      })();
+    },
+    [productId] // Depende do productId para saber qual grupo/sincronizar
+  );
+
+  /** Handler para 'onreconnecting': Quando a conexão cai e tenta voltar. */
+  const handleReconnecting = useCallback(
+    (error?: Error) => {
+      debugger
+      const groupName = String(productId);
+      console.log(`[${groupName}] Tentando reconectar...`, error);
+      setIsReconnecting(true);
+    },
+    [productId] // Depende do productId para logs
+  );
+
+  // ---
+  // 6. useEffect PRINCIPAL (Gerencia o Ciclo de Vida do SignalR)
+  // ---
   useEffect(() => {
+    debugger
     const groupName = String(productId);
     const connection = getSignalRConnection();
 
-    const setupSignalR = async () => {
+    // --- 1. Registrar Handlers de DADOS ---
+    connection.on("ReceiveNewBid", handleNewBid);
+    connection.on("FullAuctionState", handleFullStateUpdate);
+
+    // --- 2. Registrar Handlers de CICLO DE VIDA ---
+    connection.onreconnected(handleReconnect);
+    connection.onreconnecting(handleReconnecting);
+
+    // --- 3. Lógica de INICIALIZAÇÃO e CONEXÃO ---
+    const setup = async () => {
       try {
         if (connection.state === signalR.HubConnectionState.Disconnected) {
-          console.log("Iniciando conexão SignalR global...");
+          console.log(`[${groupName}] Iniciando conexão SignalR...`);
           await connection.start();
-          console.log("Conexão SignalR estabelecida.");
+          console.log(`[${groupName}] Conexão estabelecida.`);
         }
 
-        await connection.invoke("JoinAuctionGroup", groupName);
-        console.log(`Entrou no grupo ${groupName} com sucesso.`);
-
-        connection.on("ReceiveNewBid", handleNewBid);
+        // Se já estiver conectado (ou acabou de conectar)
+        if (connection.state === signalR.HubConnectionState.Connected) {
+          console.log(`[${groupName}] Entrando no grupo e sincronizando...`);
+          await connection.invoke("JoinAuctionGroup", groupName);
+          await connection.invoke("SyncAuctionState", groupName);
+        }
       } catch (err) {
-        console.error("Erro ao configurar SignalR no componente:", err);
+        console.error(`[${groupName}] Erro ao configurar SignalR:`, err);
       }
     };
 
-    setupSignalR();
+    setup(); // Executa a lógica de setup
 
+    // --- 4. Função de LIMPEZA (Cleanup) ---
     return () => {
       console.log(`Limpando ouvintes e grupo ${groupName}...`);
+
+      // Limpar handlers de DADOS
       connection.off("ReceiveNewBid", handleNewBid);
+      connection.off("FullAuctionState", handleFullStateUpdate);
 
-      if (connection.state === signalR.HubConnectionState.Connected) {
-        connection
-          .invoke("LeaveAuctionGroup", groupName)
-          .then(() => console.log(`Saiu do grupo ${groupName} com sucesso.`))
-          .catch((err) => console.log("Erro ao sair do grupo:", err));
-      }
+      // Limpar handlers de CICLO DE VIDA (atribuir função vazia)
+      connection.onreconnected = () => {};
+      connection.onreconnecting = () => {};
+
+      // Sair do grupo
+      // if (connection.state === signalR.HubConnectionState.Connected) {
+      //   connection
+      //     .invoke("OnDisconnectedAsync", groupName)
+      //     .then(() => console.log(`[${groupName}] Saiu do grupo.`))
+      //     .catch((err) => console.log("Erro ao sair do grupo:", err));
+      // }
     };
-  }, [productId, handleNewBid]);
+  }, [
+    // Array de dependências ESTÁVEL
+    productId,
+    handleNewBid,
+    handleFullStateUpdate,
+    handleReconnect,
+    handleReconnecting,
+  ]);
 
+  // ---
+  // 7. AÇÕES DO USUÁRIO (ex: Dar Lance)
+  // ---
   const handlePlaceBid = (bidAmount: number) => {
-    const groupName = productId;
+    debugger
+    const groupName = String(productId); // Garante que é string
     const connection = getSignalRConnection();
 
     if (
       connection &&
       connection.state === signalR.HubConnectionState.Connected
     ) {
-      setBidSuccess(false);
+      setBidSuccess(false); // (Do seu código original)
       connection
         .invoke("SendBid", groupName, bidAmount.toString())
         .then(() => {
           console.log(
-            `Lance de R$${bidAmount} enviado com sucesso para o grupo ${groupName}.`
+            `Lance de R$${bidAmount} enviado para ${groupName}.`
           );
+          // O 'setBidSuccess(true)' deve vir do 'handleNewBid'
+          // se 'isBidOwner' for verdadeiro
         })
         .catch((err) => {
+          console.error("Falha ao Enviar Lance:", err);
           ToastError("Falha ao Enviar Lance 🛑");
         });
     } else {
-      ToastError("Não foi possível enviar o lance. Falha de conexão");
+      if (isReconnecting) {
+        ToastError("Tentando reconectar. Aguarde para dar o lance.");
+      } else {
+        ToastError("Não foi possível enviar o lance. Falha de conexão");
+      }
     }
   };
 
