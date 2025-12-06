@@ -3,12 +3,12 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Clock, Gavel, Heart } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "../../components/ui/button"
+import { Card } from "../../components/ui/card"
+import { Badge } from "../../components/ui/badge"
 
 interface AuctionProduct {
-  id: number
+  id: string
   title: string
   image: string
   currentBid: number
@@ -21,7 +21,7 @@ interface AuctionProduct {
 
 const mockProducts: AuctionProduct[] = [
   {
-    id: 1,
+    id: '1',
     title: "Relógio Suíço Vintage",
     image: "/vintage-swiss-watch.jpg",
     currentBid: 450,
@@ -32,7 +32,7 @@ const mockProducts: AuctionProduct[] = [
     seller: "Colecionador Premium",
   },
   {
-    id: 2,
+    id: '863ca937-a969-4938-af92-11dd82303420',
     title: "Câmera Fotográfica Profissional",
     image: "/professional-camera.png",
     currentBid: 1200,
@@ -43,7 +43,7 @@ const mockProducts: AuctionProduct[] = [
     seller: "Tech Store",
   },
   {
-    id: 3,
+    id: '3',
     title: "Joia de Ouro 18K",
     image: "/gold-jewelry.jpg",
     currentBid: 800,
@@ -54,7 +54,7 @@ const mockProducts: AuctionProduct[] = [
     seller: "Joalheria Fina",
   },
   {
-    id: 4,
+    id: '4',
     title: "Quadro de Arte Moderna",
     image: "/modern-art-painting.png",
     currentBid: 600,
@@ -65,7 +65,7 @@ const mockProducts: AuctionProduct[] = [
     seller: "Galeria Contemporânea",
   },
   {
-    id: 5,
+    id: '5',
     title: "Bolsa Designer Italiana",
     image: "/italian-designer-bag.jpg",
     currentBid: 350,
@@ -76,7 +76,7 @@ const mockProducts: AuctionProduct[] = [
     seller: "Fashion Luxury",
   },
   {
-    id: 6,
+    id: '6',
     title: "Livro Raro Primeira Edição",
     image: "/rare-first-edition-book.jpg",
     currentBid: 280,
@@ -97,21 +97,7 @@ export default function Home() {
     selectedCategory === "Todos" ? mockProducts : mockProducts.filter((p) => p.category === selectedCategory)
 
   return (
-    <main className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-primary border-b border-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary-foreground p-2 rounded-lg">
-                <Gavel className="w-6 h-6 text-primary" />
-              </div>
-              <h1 className="text-2xl font-bold text-primary-foreground">LeilãoMax</h1>
-            </div>
-            <Button className="bg-primary-foreground text-primary hover:bg-secondary font-semibold">Meus Lances</Button>
-          </div>
-        </div>
-      </header>
+    <main className="min-h-screen bg-background">     
 
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-16">
