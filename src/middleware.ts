@@ -5,7 +5,6 @@ import type { NextRequest } from 'next/server';
 const AUTH_COOKIE_NAME = 'auth-token';
 
 export function middleware(request: NextRequest) {
-    debugger
   // 1. Pega o token do cookie da requisição
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
 

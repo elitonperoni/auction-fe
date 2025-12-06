@@ -10,7 +10,6 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    debugger
     const token = sessionStorage.getItem('userToken');
 
     if (token) {

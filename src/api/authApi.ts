@@ -6,7 +6,6 @@ import Cookies from "js-cookie";
 const baseRoute: string = "users";
 export class AuthApi {
   async login(request: LoginRequest): Promise<boolean> {
-    debugger;
     try {
       await api.post(`${baseRoute}/login`, request).then((resp) => {
         debugger;

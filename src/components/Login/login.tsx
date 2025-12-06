@@ -31,13 +31,11 @@ export function LoginForm({
   const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    debugger;
     event.preventDefault();
     setError(null);
 
     try {
       await authApi.login({ email: email, password: password }).then((resp) => {
-        debugger;
         if (resp === true) router.push("/");
       });
     } catch (err) {

@@ -147,7 +147,6 @@ export default function ProductPage() {
 
   /** Handler para "FullAuctionState": Recebe o estado completo pós-reconexão. */
   const handleFullStateUpdate = useCallback((fullState: ProductDetail) => {
-    debugger
     console.log("Estado completo recebido (pós-reconexão):", fullState);
     // Substitui o estado, garantindo a reconciliação
     //setProduct(fullState);
@@ -161,7 +160,6 @@ export default function ProductPage() {
   /** Handler para 'onreconnected': Quando a conexão é re-estabelecida. */
   const handleReconnect = useCallback(
     (connectionId?: string) => {
-      debugger
       const groupName = String(productId);
       console.log(`[${groupName}] Reconectado com ID: ${connectionId}`);
       setIsReconnecting(false);
@@ -186,7 +184,6 @@ export default function ProductPage() {
   /** Handler para 'onreconnecting': Quando a conexão cai e tenta voltar. */
   const handleReconnecting = useCallback(
     (error?: Error) => {
-      debugger
       const groupName = String(productId);
       console.log(`[${groupName}] Tentando reconectar...`, error);
       setIsReconnecting(true);
@@ -265,9 +262,9 @@ export default function ProductPage() {
   // 7. AÇÕES DO USUÁRIO (ex: Dar Lance)
   // ---
   const handlePlaceBid = (bidAmount: number) => {
-    debugger
     const groupName = String(productId); // Garante que é string
     const connection = getSignalRConnection();
+    debugger
 
     if (
       connection &&

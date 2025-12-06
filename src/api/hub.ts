@@ -5,7 +5,6 @@ let connection: signalR.HubConnection | null = null;
 const HUB_URL = process.env.NEXT_PUBLIC_SIGNALR_HUB_URL;
 
 export function getSignalRConnection(): signalR.HubConnection {
-    debugger
   if (connection) {
     return connection;
   }

@@ -31,7 +31,6 @@ export default function BidForm({
   };
 
   const handleSubmitBid = (e: React.FormEvent) => {
-    debugger
     e.preventDefault();
     setError("");
 
