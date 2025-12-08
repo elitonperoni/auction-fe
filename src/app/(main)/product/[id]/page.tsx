@@ -18,67 +18,9 @@ import {
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import { getSignalRConnection } from "@/src/api/hub";
 import BidForm from "@/src/components/bid-form";
-
-interface ProductDetail {
-  id: string;
-  title: string;
-  image: string;
-  currentBid: number;
-  minBid: number;
-  bids: number;
-  timeLeft: string;
-  category: string;
-  description: string;
-  seller: string;
-  sellerRating: number;
-  condition: string;
-  location: string;
-  bidHistory: Array<{ bidder: string; amount: number; time: string }>;
-}
-
-const mockProductDetails: Record<string, ProductDetail> = {
-  "1": {
-    id: "1",
-    title: "Relógio Suíço Vintage",
-    image: "/vintage-swiss-watch.jpg",
-    currentBid: 450,
-    minBid: 500,
-    bids: 12,
-    timeLeft: "2h 30m",
-    category: "Relógios",
-    description:
-      "Relógio suíço de luxo dos anos 1970, em perfeito estado de funcionamento. Caixa de ouro 18K, pulseira original de couro. Acompanha certificado de autenticidade.",
-    seller: "Colecionador Premium",
-    sellerRating: 4.8,
-    condition: "Excelente",
-    location: "São Paulo, SP",
-    bidHistory: [
-      { bidder: "Usuário123", amount: 450, time: "há 5 minutos" },
-      { bidder: "Usuário456", amount: 420, time: "há 15 minutos" },
-      { bidder: "Usuário789", amount: 400, time: "há 1 hora" },
-    ],
-  },
-  "863ca937-a969-4938-af92-11dd82303420": {
-    id: "863ca937-a969-4938-af92-11dd82303420",
-    title: "Câmera Fotográfica Profissional",
-    image: "/professional-camera.png",
-    currentBid: 1200,
-    minBid: 1300,
-    bids: 8,
-    timeLeft: "5h 15m",
-    category: "Eletrônicos",
-    description:
-      "Câmera DSLR profissional com lente 24-70mm. Sensor full-frame, 45MP. Praticamente nova, com menos de 1000 disparos.",
-    seller: "Fotógrafo Profissional",
-    sellerRating: 4.9,
-    condition: "Como Nova",
-    location: "Rio de Janeiro, RJ",
-    bidHistory: [
-      { bidder: "Usuário111", amount: 1200, time: "há 2 minutos" },
-      { bidder: "Usuário222", amount: 1150, time: "há 20 minutos" },
-    ],
-  },
-};
+import { AuctionProductDetail } from "@/src/models/respose/auctionProductDetail";
+import { auctionApi } from "@/src/api";
+import { KeyValuePair } from "@/src/models/respose/keyValue";
 
 interface BidEntry {
   bidder: string;
@@ -90,29 +32,17 @@ export default function ProductPage() {
   const router = useRouter();
   const params = useParams();
   const productId = String(params?.id);
-  const initialProduct = mockProductDetails[productId];
+  const [timeLeft, setTimeLeft] = useState<string>("");
+  const [isEnded, setIsEnded] = useState(false);
   const [bidSuccess, setBidSuccess] = useState(false);
-  const [product, setProduct] = useState<ProductDetail | undefined>(
-    initialProduct
-  );
+  const [product, setProduct] = useState<AuctionProductDetail | undefined>();
   const [isFavorite, setIsFavorite] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
 
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">
-            Produto não encontrado
-          </h1>
-          <Button onClick={() => router.push("/")}>Voltar para Home</Button>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    fetchProductDetails(productId);
+  }, []);
 
- 
-  /** Handler para "ReceiveNewBid": Quando um novo lance chega. */
   const handleNewBid = useCallback(
     (
       receivedProductId: string,
@@ -126,32 +56,94 @@ export default function ProductPage() {
         setProduct((prevProduct) => {
           if (!prevProduct) return undefined;
 
-          const newBidEntry: BidEntry = {
-            bidder: newBidderName,
-            amount: newBidAmount,
-            time: newBidTime,
+          debugger;
+          const newBidEntry: KeyValuePair<string, number> = {
+            key: newBidderName,
+            value: newBidAmount,
           };
           showNotifyBid(isBidOwner, newBidderName, newBidAmount);
 
           return {
             ...prevProduct,
             currentBid: newBidAmount,
-            bids: newTotalBids,
+            bidsCounts: newTotalBids,
+            //bids: newTotalBids,
             bidHistory: [newBidEntry, ...prevProduct.bidHistory], // Adiciona no topo
           };
         });
       }
     },
-    [productId] 
+    [productId]
   );
 
+  useEffect(() => {
+    if (!product?.endDate) return;
+
+    const calculateTimeLeft = () => {
+      const now = new Date().getTime();
+      const target = new Date(product.endDate).getTime();
+      const difference = target - now;
+
+      // Se o tempo acabou
+      if (difference <= 0) {
+        setTimeLeft("Leilão Encerrado");
+        setIsEnded(true);
+        return;
+      }
+
+      // Cálculos matemáticos para dias, horas, minutos e segundos
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor(
+        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+      );
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      // Formatação para adicionar o zero à esquerda (ex: 09 em vez de 9)
+      const pad = (num: number) => num.toString().padStart(2, "0");
+
+      // Monta a string final. Você pode personalizar o formato aqui.
+      // Exemplo: "01d 02h 30m 45s" ou apenas "02:30:45"
+      if (days > 0) {
+        setTimeLeft(
+          `${pad(days)}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`
+        );
+      } else {
+        setTimeLeft(`${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`);
+      }
+    };
+
+    // Atualiza imediatamente ao montar
+    calculateTimeLeft();
+
+    // Cria o intervalo de 1 segundo
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    // Limpa o intervalo quando o componente desmonta (Evita memory leaks)
+    return () => clearInterval(timer);
+  }, [product?.endDate]);
+
+  async function fetchProductDetails(id: string) {
+    await auctionApi
+      .getDetail(id)
+      .then((data) => {
+        setProduct(data);
+      })
+      .catch((error) => {
+        console.error("Erro ao buscar detalhes do produto:", error);
+      });
+  }
+
   /** Handler para "FullAuctionState": Recebe o estado completo pós-reconexão. */
-  const handleFullStateUpdate = useCallback((fullState: ProductDetail) => {
-    console.log("Estado completo recebido (pós-reconexão):", fullState);
-    // Substitui o estado, garantindo a reconciliação
-    //setProduct(fullState);
-    setIsReconnecting(false); // Parou de reconectar
-  }, []); // Sem dependências, pois só usa 'setProduct' e 'setIsReconnecting'
+  const handleFullStateUpdate = useCallback(
+    (fullState: AuctionProductDetail) => {
+      console.log("Estado completo recebido (pós-reconexão):", fullState);
+      // Substitui o estado, garantindo a reconciliação
+      //setProduct(fullState);
+      setIsReconnecting(false); // Parou de reconectar
+    },
+    []
+  ); // Sem dependências, pois só usa 'setProduct' e 'setIsReconnecting'
 
   // ---
   // 5. HANDLERS DE CICLO DE VIDA (com useCallback)
@@ -195,7 +187,7 @@ export default function ProductPage() {
   // 6. useEffect PRINCIPAL (Gerencia o Ciclo de Vida do SignalR)
   // ---
   useEffect(() => {
-    debugger
+    debugger;
     const groupName = String(productId);
     const connection = getSignalRConnection();
 
@@ -264,7 +256,7 @@ export default function ProductPage() {
   const handlePlaceBid = (bidAmount: number) => {
     const groupName = String(productId); // Garante que é string
     const connection = getSignalRConnection();
-    debugger
+    debugger;
 
     if (
       connection &&
@@ -274,9 +266,7 @@ export default function ProductPage() {
       connection
         .invoke("SendBid", groupName, bidAmount.toString())
         .then(() => {
-          console.log(
-            `Lance de R$${bidAmount} enviado para ${groupName}.`
-          );
+          console.log(`Lance de R$${bidAmount} enviado para ${groupName}.`);
           // O 'setBidSuccess(true)' deve vir do 'handleNewBid'
           // se 'isBidOwner' for verdadeiro
         })
@@ -293,6 +283,19 @@ export default function ProductPage() {
     }
   };
 
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">
+            Produto não encontrado
+          </h1>
+          <Button onClick={() => router.push("/")}>Voltar para Home</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -302,7 +305,8 @@ export default function ProductPage() {
             <Card className="overflow-hidden mb-6 bg-card border-border">
               <div className="relative bg-muted aspect-square">
                 <img
-                  src={product.image || "/placeholder.svg"}
+                  //src={product.images[0] || "/placeholder.svg"}
+                  src={"/professional-camera.png"}
                   alt={product.title}
                   className="w-full h-full object-cover"
                 />
@@ -312,7 +316,7 @@ export default function ProductPage() {
                     className="flex items-center gap-2 px-4 py-2 text-base shadow-lg"
                   >
                     <Clock className="w-5 h-5" />
-                    {product.timeLeft}
+                    {timeLeft}
                   </Badge>
                 </div>
               </div>
@@ -332,7 +336,7 @@ export default function ProductPage() {
                   value="history"
                   className="flex items-center gap-2"
                 >
-                  <History className="h-4 w-4" /> Histórico de Lances
+                  <History className="h-4 w-4" /> Histórico de Lances                 
                 </TabsTrigger>
               </TabsList>
 
@@ -368,7 +372,7 @@ export default function ProductPage() {
                         Total de Lances
                       </p>
                       <p className="font-semibold text-foreground">
-                        {product.bids}
+                        {product.bidsCounts}
                       </p>
                     </div>
                   </div>
@@ -388,7 +392,8 @@ export default function ProductPage() {
                           {product.seller}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          ⭐ {product.sellerRating} (Avaliação)
+                          {/* ⭐ {product.sellerRating} (Avaliação) */}⭐{" "}
+                          {"4.9"} (Avaliação)
                         </p>
                       </div>
                       <Button
@@ -405,34 +410,42 @@ export default function ProductPage() {
               {/* 2. Seção Histórico de Lances Completa */}
               <TabsContent value="history">
                 <Card className="p-6 bg-card border-border">
-                  <h3 className="text-2xl font-bold text-foreground mb-4">
-                    Histórico de Lances
-                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    {/* Título à Esquerda */}
+                    <h3 className="text-2xl font-bold text-foreground">
+                      Histórico de Lances
+                    </h3>
+
+                    {/* Quantidade à Direita */}
+                    <span className="text-lg text-muted-foreground mr-6">
+                      {product.bidsCounts} lances
+                    </span>
+                  </div>
                   <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                     {product.bidHistory.length > 0 ? (
-                      product.bidHistory.map(
-                        (
-                          bid: { bidder: string; time: string; amount: number },
-                          index: number
-                        ) => (
-                          <div
-                            key={`${bid.bidder}-${index}`}
-                            className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border"
-                          >
-                            <div>
-                              <p className="font-semibold text-foreground">
-                                {bid.bidder}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {bid.time}
-                              </p>
-                            </div>
-                            <p className="font-bold text-foreground text-lg">
-                              R$ {bid.amount.toLocaleString("pt-BR")}
+                      (
+                        product.bidHistory as KeyValuePair<string, number>[]
+                      ).map((bid, index: number) => (
+                        <div
+                          key={`${bid.key}-${index}`}
+                          className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border"
+                        >
+                          <div>
+                            <p className="font-semibold text-foreground">
+                              {bid.key}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {/* {bid.time} */}
                             </p>
                           </div>
-                        )
-                      )
+                          <p className="font-bold text-foreground text-lg">
+                            {bid.value.toLocaleString("pt-BR", {
+                              style: "currency",
+                              currency: "BRL",
+                            })}
+                          </p>
+                        </div>
+                      ))
                     ) : (
                       <Alert className="bg-secondary/20 border-secondary">
                         <AlertDescription>
