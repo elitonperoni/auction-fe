@@ -1,28 +1,15 @@
 "use client"; // <-- MUDANÇA: Necessário para usar estado e eventos
 
-import { useState } from "react"; // <-- MUDANÇA: Para guardar email e senha
-import { useRouter, useSearchParams } from "next/navigation";
-import { Input } from "../ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
+import { useState } from "react";
 import { cn } from "@/src/lib/utils";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldSeparator,
-} from "../ui/field";
-import { Button } from "../ui/button";
 import { authApi } from "@/src/api";
+import ToastSuccess from "@/src/components/Toast/toastNotificationSuccess";
+import ToastError from "@/src/components/Toast/toastNotificationError";
+import { Card, CardContent } from "@/src/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/src/components/ui/field";
+import { Input } from "@/src/components/ui/input";
+import { Button } from "@/src/components/ui/button";
 import { Loader2 } from "lucide-react";
-import ToastSuccess from "../Toast/toastNotificationSuccess";
-import ToastError from "../Toast/toastNotificationError";
 
 export function RecoveryPasswordForm({
   className,
@@ -32,28 +19,22 @@ export function RecoveryPasswordForm({
   const [error, setError] = useState<string | null>(null);
   const [sucess, setSucess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-      debugger
+    debugger;
 
     try {
-      await authApi.recoveryPassword({ email: email })
-        .then((resp) => {
-        if (resp === true) 
-        {
-            debugger
+      await authApi.recoveryPassword({ email: email }).then((resp) => {
+        if (resp === true) {
           ToastSuccess("Email de alteração de senha enviado com sucesso!");
-          setEmail("")
-          setSucess("Verifique sua caixa de entrada de email")
-        }
-        else{
+          setEmail("");
+          setSucess("Verifique sua caixa de entrada de email");
+        } else {
           ToastError("Ocorreu um erro ao alterar a senha");
         }
-          
+
         setIsLoading(false);
       });
     } catch (err) {
@@ -69,21 +50,20 @@ export function RecoveryPasswordForm({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
-       
         <CardContent>
-          {/* <-- MUDANÇA: Adicionado o evento onSubmit */}
           <form onSubmit={handleSubmit}>
             <FieldGroup>
-            
               <Field>
-                <FieldLabel htmlFor="email">Digite o email para recuperação da senha</FieldLabel>
+                <FieldLabel htmlFor="email">
+                  Digite o email para recuperação da senha
+                </FieldLabel>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="email"
+                  placeholder="Email"
                   required
-                  value={email} // <-- MUDANÇA: Controla o valor
-                  onChange={(e) => setEmail(e.target.value)} // <-- MUDANÇA: Atualiza o estado
+                  value={email} // <-- MU
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </Field>
               <Field>
@@ -95,24 +75,19 @@ export function RecoveryPasswordForm({
                   )}
                 </Button>
 
-                {/* <-- MUDANÇA: Mostrar mensagem de erro */}
                 {error && (
                   <p className="text-sm text-center text-destructive">
                     {error}
                   </p>
                 )}
-                 {sucess && (
-                  <p className="text-sm text-center text-blue-600">
-                    {sucess}
-                  </p>
+                {sucess && (
+                  <p className="text-sm text-center text-blue-600">{sucess}</p>
                 )}
-               
               </Field>
             </FieldGroup>
           </form>
         </CardContent>
       </Card>
-    
     </div>
   );
 }

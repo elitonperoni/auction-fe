@@ -1,7 +1,7 @@
 import Button from "@/src/components/Button/button"
-import { LoginForm } from "@/src/components/Login/login"
 import { ChevronLeft, GalleryVerticalEnd } from "lucide-react"
 import Link from "next/link"
+import { LoginForm } from "./components/login"
 
 
 export default function LoginPage() {

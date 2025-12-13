@@ -1,27 +1,15 @@
 "use client"; // <-- MUDANÇA: Necessário para usar estado e eventos
 
-import { useState } from "react"; // <-- MUDANÇA: Para guardar email e senha
+import { useState } from "react"; 
 import { useRouter } from "next/navigation";
-import { Input } from "../ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
 import { cn } from "@/src/lib/utils";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldSeparator,
-} from "../ui/field";
-import { Button } from "../ui/button";
 import { authApi } from "@/src/api";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card";
+import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator } from "@/src/components/ui/field";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
 
 export function LoginForm({
   className,

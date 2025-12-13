@@ -1,23 +1,23 @@
 "use client"; // <-- MUDANÇA: Necessário para usar estado e eventos
 
-import { useState } from "react"; // <-- MUDANÇA: Para guardar email e senha
+import { useState } from "react"; 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Input } from "../ui/input";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
-} from "../ui/card";
+} from "@/components/ui/card";
 import { cn } from "@/src/lib/utils";
 import {
   Field,
   FieldGroup,
   FieldLabel,
-} from "../ui/field";
-import { Button } from "../ui/button";
+} from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
 import { authApi } from "@/src/api";
 import { Loader2 } from "lucide-react";
-import ToastSuccess from "../Toast/toastNotificationSuccess";
-import ToastError from "../Toast/toastNotificationError";
+import ToastSuccess from "@/components/Toast/toastNotificationSuccess";
+import ToastError from "@/components/Toast/toastNotificationError";
 
 export function ResetPasswordForm({
   className,
@@ -48,12 +48,11 @@ export function ResetPasswordForm({
     try {
       await authApi.resetPassword({ token: requestId!, password: password })
         .then((resp) => {
-        if (resp === true) 
-        {
+        if (resp === true)  {
           ToastSuccess("Senha alterada com sucesso!");
           router.push("/login");
         }
-        else{
+        else {
           ToastError("Ocorreu um erro ao alterar a senha");
         }
           
@@ -74,7 +73,6 @@ export function ResetPasswordForm({
       <Card>
        
         <CardContent>
-          {/* <-- MUDANÇA: Adicionado o evento onSubmit */}
           <form onSubmit={handleSubmit}>
             <FieldGroup>
             
@@ -83,10 +81,10 @@ export function ResetPasswordForm({
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Senha"
+                  placeholder="Nova senha"
                   required
-                  value={password} // <-- MUDANÇA: Controla o valor
-                  onChange={(e) => setPassword(e.target.value)} // <-- MUDANÇA: Atualiza o estado
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
                 />
               </Field>
               
@@ -99,8 +97,8 @@ export function ResetPasswordForm({
                   type="password"
                    placeholder="Confirme a senha"
                   required
-                  value={confirmPassword} // <-- MUDANÇA: Controla o valor
-                  onChange={(e) => setConfirmPassword(e.target.value)} // <-- MUDANÇA: Atualiza o estado
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)} 
                 />
               </Field>
               <Field>
@@ -112,7 +110,6 @@ export function ResetPasswordForm({
                   )}
                 </Button>
 
-                {/* <-- MUDANÇA: Mostrar mensagem de erro */}
                 {error && (
                   <p className="text-sm text-center text-destructive">
                     {error}
@@ -124,7 +121,6 @@ export function ResetPasswordForm({
           </form>
         </CardContent>
       </Card>
-    
     </div>
   );
 }
