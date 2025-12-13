@@ -9,7 +9,8 @@ import { Card, CardContent } from "@/src/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/src/components/ui/field";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export function RecoveryPasswordForm({
   className,
@@ -19,6 +20,7 @@ export function RecoveryPasswordForm({
   const [error, setError] = useState<string | null>(null);
   const [sucess, setSucess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -50,6 +52,14 @@ export function RecoveryPasswordForm({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
+         <Button
+          variant="ghost"
+          size="icon"
+          className="absolute left-4 top-4" // Fixa no canto esquerdo
+          onClick={() => router.back()} // Volta para a página anterior
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
         <CardContent>
           <form onSubmit={handleSubmit}>
             <FieldGroup>
