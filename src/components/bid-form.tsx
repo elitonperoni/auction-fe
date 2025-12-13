@@ -3,10 +3,11 @@
 import type React from "react";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
+import Button from "./Button/button";
+import ButtonCustom from "./Button/button";
 
 interface BidFormProps {
   currentBid: number;
@@ -30,8 +31,8 @@ export default function BidForm({
     //setSuccess(false);
   };
 
-  const handleSubmitBid = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmitBid = () => {
+    //e.preventDefault();
     setError("");
 
     const bid = Number.parseFloat(bidAmount); // 1. Validação: Valor numérico
@@ -75,13 +76,14 @@ export default function BidForm({
   }; // Ajuste nas sugestões para garantir que sejam maiores que o lance atual
 
   const nextMinBid = currentBid + 1;
+
   const suggestedBids = [
     nextMinBid,
     Math.round(nextMinBid * 1.1),
     Math.round(nextMinBid * 1.2),
   ]
     .map((bid) => Math.max(bid, minBid))
-    .slice(0, 3); // Garante que as sugestões respeitem o minBid
+    .slice(0, 3); 
 
  return (
         <form onSubmit={handleSubmitBid} className="space-y-4">
@@ -129,16 +131,16 @@ export default function BidForm({
                 {/* 🎯 AJUSTE DE LAYOUT: Garantir altura uniforme para alinhamento */}
                 <div className="grid grid-cols-3 gap-2">
                     {suggestedBids.map((bid) => (
-                        <Button
+                        <ButtonCustom
                             key={bid}
-                            type="button"
+                            //type="button"
                             onClick={() => setBidAmount(bid.toString())}
                             variant="outline"
                             // ❗ Chave para o alinhamento: h-10 (altura fixa)
                             className="h-10 text-sm font-semibold border-border hover:bg-muted" 
                         >
                             R$ {bid.toLocaleString("pt-BR")}
-                        </Button>
+                        </ButtonCustom>
                     ))}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -146,12 +148,11 @@ export default function BidForm({
                 </p>
             </div>
 
-            <Button
-                type="submit"
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 text-lg"
+            <ButtonCustom                
+                onClick={handleSubmitBid}
             >
                 Fazer Lance
-            </Button>
+            </ButtonCustom>
 
             <p className="text-xs text-muted-foreground text-center">
                 Ao fazer um lance, você concorda com nossos termos de serviço

@@ -3,7 +3,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import * as signalR from "@microsoft/signalr";
 import { useRouter, useParams } from "next/navigation";
-import { Clock, Heart, Share2, CheckCircle2, History } from "lucide-react";
+import {
+  Clock,
+  Heart,
+  Share2,
+  CheckCircle2,
+  History,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import ToastSuccess from "@/src/components/Toast/toastNotificationSuccess";
 import ToastError from "@/src/components/Toast/toastNotificationError";
@@ -21,6 +28,7 @@ import BidForm from "@/src/components/bid-form";
 import { AuctionProductDetail } from "@/src/models/respose/auctionProductDetail";
 import { auctionApi } from "@/src/api";
 import { KeyValuePair } from "@/src/models/respose/keyValue";
+import { Spinner } from "@/src/components/ui/spinner";
 
 interface BidEntry {
   bidder: string;
@@ -35,9 +43,10 @@ export default function ProductPage() {
   const [timeLeft, setTimeLeft] = useState<string>("");
   const [isEnded, setIsEnded] = useState(false);
   const [bidSuccess, setBidSuccess] = useState(false);
-  const [product, setProduct] = useState<AuctionProductDetail | undefined>();
+  const [product, setProduct] = useState<AuctionProductDetail>();
   const [isFavorite, setIsFavorite] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     fetchProductDetails(productId);
@@ -124,13 +133,16 @@ export default function ProductPage() {
   }, [product?.endDate]);
 
   async function fetchProductDetails(id: string) {
+    setIsLoading(true);
     await auctionApi
       .getDetail(id)
       .then((data) => {
         setProduct(data);
+        setIsLoading(false);
       })
       .catch((error) => {
         console.error("Erro ao buscar detalhes do produto:", error);
+        setIsLoading(false);
       });
   }
 
@@ -283,7 +295,7 @@ export default function ProductPage() {
     }
   };
 
-  if (!product) {
+  if (!product && !isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -296,221 +308,260 @@ export default function ProductPage() {
     );
   }
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-2">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-muted-foreground text-sm">Carregando produto...</p>
+      </div>
+    );
+  }
+
   return (
-    <main className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            {/* Product Image */}
-            <Card className="overflow-hidden mb-6 bg-card border-border">
-              <div className="relative bg-muted aspect-square">
-                <img
-                  //src={product.images[0] || "/placeholder.svg"}
-                  src={"/professional-camera.png"}
-                  alt={product.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-4 right-4">
-                  <Badge
-                    variant="destructive"
-                    className="flex items-center gap-2 px-4 py-2 text-base shadow-lg"
-                  >
-                    <Clock className="w-5 h-5" />
-                    {timeLeft}
-                  </Badge>
-                </div>
-              </div>
-            </Card>
-
-            {/* Product Info with Tabs */}
-            <Tabs defaultValue="details" className="w-full">
-              {/* 1. Inclusão da TabsList para navegação */}
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger
-                  value="details"
-                  className="flex items-center gap-2"
-                >
-                  <CheckCircle2 className="h-4 w-4" /> Detalhes do Produto
-                </TabsTrigger>
-                <TabsTrigger
-                  value="history"
-                  className="flex items-center gap-2"
-                >
-                  <History className="h-4 w-4" /> Histórico de Lances                 
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="details" className="space-y-6">
-                <Card className="p-6 bg-card border-border">
-                  <h1 className="text-3xl font-bold text-foreground mb-4">
-                    {product.title}
-                  </h1>
-
-                  <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-border">
-                    <div>
-                      <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
-                        Categoria
-                      </p>
-                      <Badge variant="secondary">{product.category}</Badge>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
-                        Condição
-                      </p>
-                      <Badge variant="outline">{product.condition}</Badge>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
-                        Localização
-                      </p>
-                      <p className="font-semibold text-foreground">
-                        {product.location}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
-                        Total de Lances
-                      </p>
-                      <p className="font-semibold text-foreground">
-                        {product.bidsCounts}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mb-6">
-                    <h3 className="font-bold text-foreground mb-3">
-                      Descrição
-                    </h3>
-                    <p className="text-foreground/80 leading-relaxed">
-                      {product.description}
-                    </p>
-                  </div>
-                  <Card className="p-4 bg-muted border-border">
-                    <h3 className="font-bold text-foreground mb-3">Vendedor</h3>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-foreground">
-                          {product.seller}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {/* ⭐ {product.sellerRating} (Avaliação) */}⭐{" "}
-                          {"4.9"} (Avaliação)
-                        </p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        className="border-border bg-transparent"
-                      >
-                        Contatar Vendedor
-                      </Button>
-                    </div>
-                  </Card>
-                </Card>
-              </TabsContent>
-
-              {/* 2. Seção Histórico de Lances Completa */}
-              <TabsContent value="history">
-                <Card className="p-6 bg-card border-border">
-                  <div className="flex items-center justify-between mb-4">
-                    {/* Título à Esquerda */}
-                    <h3 className="text-2xl font-bold text-foreground">
-                      Histórico de Lances
-                    </h3>
-
-                    {/* Quantidade à Direita */}
-                    <span className="text-lg text-muted-foreground mr-6">
-                      {product.bidsCounts} lances
-                    </span>
-                  </div>
-                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                    {product.bidHistory.length > 0 ? (
-                      (
-                        product.bidHistory as KeyValuePair<string, number>[]
-                      ).map((bid, index: number) => (
-                        <div
-                          key={`${bid.key}-${index}`}
-                          className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border"
-                        >
-                          <div>
-                            <p className="font-semibold text-foreground">
-                              {bid.key}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {/* {bid.time} */}
-                            </p>
-                          </div>
-                          <p className="font-bold text-foreground text-lg">
-                            {bid.value.toLocaleString("pt-BR", {
-                              style: "currency",
-                              currency: "BRL",
-                            })}
-                          </p>
-                        </div>
-                      ))
-                    ) : (
-                      <Alert className="bg-secondary/20 border-secondary">
-                        <AlertDescription>
-                          Ainda não há lances para este produto. Seja o primeiro
-                          a dar um lance!
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          <div className="lg:col-span-1">
-            <Card className="p-6 bg-card border-border sticky top-24">
-              {/* Current Bid */}
-              <div className="mb-6 pb-6 border-b border-border">
-                <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
-                  Lance Atual
-                </p>
-                <p className="text-4xl font-bold text-primary mb-2">
-                  R$ {product.currentBid.toLocaleString("pt-BR")}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Mínimo: R$ {product.minBid.toLocaleString("pt-BR")}
-                </p>
-              </div>
-              {/* Bid Form */}
-              <BidForm
-                currentBid={product.currentBid}
-                minBid={product.minBid}
-                successBid={bidSuccess}
-                onPlaceBid={handlePlaceBid}
-              />
-              {/* Action Buttons e Info Box */}
-              <div className="flex gap-2 mt-4">
-                <Button
-                  onClick={() => setIsFavorite(!isFavorite)}
-                  variant={isFavorite ? "default" : "outline"}
-                  className="flex-1"
-                >
-                  <Heart
-                    className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`}
-                  />
-                  Favoritar
-                </Button>
-                <Button variant="outline" className="flex-1 bg-transparent">
-                  <Share2 className="w-5 h-5" />
-                  Compartilhar
-                </Button>
-              </div>
-              <Alert className="mt-6 bg-muted border-border">
-                <CheckCircle2 className="h-4 w-4 text-primary" />
-                <AlertDescription className="text-foreground">
-                  ✓ Pagamento seguro garantido
-                  <br />✓ Autenticidade verificada
-                  <br />✓ Frete incluído na venda
-                </AlertDescription>
-              </Alert>
-            </Card>
+    <>
+      {isLoading && !product && (
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-2">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-muted-foreground text-sm">Carregando produto...</p>
+        </div>
+      )}
+      {!isLoading && !product && (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">
+              Produto não encontrado
+            </h1>
+            <Button onClick={() => router.push("/")}>Voltar para Home</Button>
           </div>
         </div>
-      </div>
-    </main>
+      )}
+
+      {!isLoading && product && (
+        <main className="min-h-screen bg-background">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2">
+                    <div className="mb-6">
+              <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">
+                {product.title}
+              </h1>
+                </div>
+                {/* Product Image */}
+                <Card className="overflow-hidden mb-6 bg-card border-border">
+                  <div className="relative bg-muted aspect-square">
+                    <img
+                      //src={product.images[0] || "/placeholder.svg"}
+                      src={"/professional-camera.png"}
+                      alt={product.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-4 right-4">
+                      <Badge
+                        variant="destructive"
+                        className="flex items-center gap-2 px-4 py-2 text-base shadow-lg"
+                      >
+                        <Clock className="w-5 h-5" />
+                        {timeLeft}
+                      </Badge>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Product Info with Tabs */}
+                <Tabs defaultValue="details" className="w-full">
+                  {/* 1. Inclusão da TabsList para navegação */}
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsTrigger
+                      value="details"
+                      className="flex items-center gap-2"
+                    >
+                      <CheckCircle2 className="h-4 w-4" /> Detalhes do Produto
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="history"
+                      className="flex items-center gap-2"
+                    >
+                      <History className="h-4 w-4" /> Histórico de Lances
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="details" className="space-y-6">
+                    <Card className="p-6 bg-card border-border">
+                      <h1 className="text-3xl font-bold text-foreground mb-4">
+                        {product.title}
+                      </h1>
+
+                      <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-border">
+                        <div>
+                          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+                            Categoria
+                          </p>
+                          <Badge variant="secondary">{product.category}</Badge>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+                            Condição
+                          </p>
+                          <Badge variant="outline">{product.condition}</Badge>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+                            Localização
+                          </p>
+                          <p className="font-semibold text-foreground">
+                            {product.location}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+                            Total de Lances
+                          </p>
+                          <p className="font-semibold text-foreground">
+                            {product.bidsCounts}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mb-6">
+                        <h3 className="font-bold text-foreground mb-3">
+                          Descrição
+                        </h3>
+                        <p className="text-foreground/80 leading-relaxed">
+                          {product.description}
+                        </p>
+                      </div>
+                      <Card className="p-4 bg-muted border-border">
+                        <h3 className="font-bold text-foreground mb-3">
+                          Vendedor
+                        </h3>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-foreground">
+                              {product.seller}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {/* ⭐ {product.sellerRating} (Avaliação) */}⭐{" "}
+                              {"4.9"} (Avaliação)
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            className="border-border bg-transparent"
+                          >
+                            Contatar Vendedor
+                          </Button>
+                        </div>
+                      </Card>
+                    </Card>
+                  </TabsContent>
+
+                  {/* 2. Seção Histórico de Lances Completa */}
+                  <TabsContent value="history">
+                    <Card className="p-6 bg-card border-border">
+                      <div className="flex items-center justify-between mb-4">
+                        {/* Título à Esquerda */}
+                        <h3 className="text-2xl font-bold text-foreground">
+                          Histórico de Lances
+                        </h3>
+
+                        {/* Quantidade à Direita */}
+                        <span className="text-lg text-muted-foreground mr-6">
+                          {product.bidsCounts} lances
+                        </span>
+                      </div>
+                      <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                        {product.bidHistory.length > 0 ? (
+                          (
+                            product.bidHistory as KeyValuePair<string, number>[]
+                          ).map((bid, index: number) => (
+                            <div
+                              key={`${bid.key}-${index}`}
+                              className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border"
+                            >
+                              <div>
+                                <p className="font-semibold text-foreground">
+                                  {bid.key}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {/* {bid.time} */}
+                                </p>
+                              </div>
+                              <p className="font-bold text-foreground text-lg">
+                                {bid.value.toLocaleString("pt-BR", {
+                                  style: "currency",
+                                  currency: "BRL",
+                                })}
+                              </p>
+                            </div>
+                          ))
+                        ) : (
+                          <Alert className="bg-secondary/20 border-secondary">
+                            <AlertDescription>
+                              Ainda não há lances para este produto. Seja o
+                              primeiro a dar um lance!
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              <div className="lg:col-span-1">
+                <Card className="p-6 bg-card border-border sticky top-24">
+                  {/* Current Bid */}
+                  <div className="mb-6 pb-6 border-b border-border">
+                    <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
+                      Lance Atual
+                    </p>
+                    <p className="text-4xl font-bold text-primary mb-2">
+                      R$ {product.currentBid.toLocaleString("pt-BR")}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Mínimo: R$ {product.minBid.toLocaleString("pt-BR")}
+                    </p>
+                  </div>
+                  {/* Bid Form */}
+                  <BidForm
+                    currentBid={product.currentBid}
+                    minBid={product.minBid}
+                    successBid={bidSuccess}
+                    onPlaceBid={handlePlaceBid}
+                  />
+                  {/* Action Buttons e Info Box */}
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      onClick={() => setIsFavorite(!isFavorite)}
+                      variant={isFavorite ? "default" : "outline"}
+                      className="flex-1"
+                    >
+                      <Heart
+                        className={`w-5 h-5 ${
+                          isFavorite ? "fill-current" : ""
+                        }`}
+                      />
+                      Favoritar
+                    </Button>
+                    <Button variant="outline" className="flex-1 bg-transparent">
+                      <Share2 className="w-5 h-5" />
+                      Compartilhar
+                    </Button>
+                  </div>
+                  <Alert className="mt-6 bg-muted border-border">
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                    <AlertDescription className="text-foreground">
+                      ✓ Pagamento seguro garantido
+                      <br />✓ Autenticidade verificada
+                      <br />✓ Frete incluído na venda
+                    </AlertDescription>
+                  </Alert>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </main>
+      )}
+    </>
   );
 
   function showNotifyBid(

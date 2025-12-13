@@ -20,6 +20,7 @@ import {
 } from "../ui/field";
 import { Button } from "../ui/button";
 import { authApi } from "@/src/api";
+import { Loader2 } from "lucide-react";
 
 export function LoginForm({
   className,
@@ -28,15 +29,26 @@ export function LoginForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setIsLoading(true);
     setError(null);
 
     try {
-      await authApi.login({ email: email, password: password }).then((resp) => {
-        if (resp === true) router.push("/");
+      await authApi.login({ email: email, password: password })
+        .then((resp) => {
+        if (resp === true) 
+        {
+          router.push("/");
+        }
+        else{
+          setError("Usuário ou senha inválidos");  
+        }
+          
+        setIsLoading(false);
       });
     } catch (err) {
       if (err instanceof Error) {
@@ -44,6 +56,7 @@ export function LoginForm({
       } else {
         setError("Ocorreu um erro inesperado");
       }
+      setIsLoading(false);
     }
   };
 
@@ -99,7 +112,13 @@ export function LoginForm({
                 />
               </Field>
               <Field>
-                <Button type="submit">Login</Button>
+                <Button type="submit" disabled={isLoading} className="w-full">
+                  {isLoading ? (
+                    <Loader2 className="animate-spin size-4" />
+                  ) : (
+                    "Login"
+                  )}
+                </Button>
 
                 {/* <-- MUDANÇA: Mostrar mensagem de erro */}
                 {error && (
