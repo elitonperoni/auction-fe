@@ -21,6 +21,7 @@ import {
 import { Button } from "../ui/button";
 import { authApi } from "@/src/api";
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
 
 export function LoginForm({
   className,
@@ -127,7 +128,9 @@ export function LoginForm({
                   </p>
                 )}
                 <FieldDescription className="text-center">
-                  <a href="#">Forgot your password?</a>
+                  <Link href="/recovery-password">
+                    Esqueceu sua senha?
+                  </Link>                  
                 </FieldDescription>
                 <FieldDescription className="text-center">
                   Don&apos;t have an account? <a href="#">Sign up</a>

@@ -12,7 +12,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 3. Define quais rotas são públicas
-  const publicPaths = ["/login", "/"];
+  const publicPaths = ["/login", "/reset-password", "/recovery-password", "/"];
 
   // 4. Verifica se a rota acessada é pública
   const isPublicPath = publicPaths.some((path) => {

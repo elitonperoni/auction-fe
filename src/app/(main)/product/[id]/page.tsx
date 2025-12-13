@@ -41,7 +41,6 @@ export default function ProductPage() {
   const params = useParams();
   const productId = String(params?.id);
   const [timeLeft, setTimeLeft] = useState<string>("");
-  const [isEnded, setIsEnded] = useState(false);
   const [bidSuccess, setBidSuccess] = useState(false);
   const [product, setProduct] = useState<AuctionProductDetail>();
   const [isFavorite, setIsFavorite] = useState(false);
@@ -96,7 +95,7 @@ export default function ProductPage() {
       // Se o tempo acabou
       if (difference <= 0) {
         setTimeLeft("Leilão Encerrado");
-        setIsEnded(true);
+        //setIsEnded(true);
         return;
       }
 
