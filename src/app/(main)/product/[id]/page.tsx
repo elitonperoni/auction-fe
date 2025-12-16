@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import * as signalR from "@microsoft/signalr";
 import { useRouter, useParams } from "next/navigation";
 import {
@@ -29,6 +29,21 @@ import { AuctionProductDetail } from "@/src/models/respose/auctionProductDetail"
 import { auctionApi } from "@/src/api";
 import { KeyValuePair } from "@/src/models/respose/keyValue";
 import { Spinner } from "@/src/components/ui/spinner";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/src/components/ui/dialog";
 
 interface BidEntry {
   bidder: string;
@@ -294,6 +309,15 @@ export default function ProductPage() {
     }
   };
 
+  const plugin = React.useRef(
+    Autoplay({ delay: 3500, stopOnInteraction: true })
+  );
+
+  const imagesToShow = [
+    "https://s2-techtudo.glbimg.com/FlwsSQQGURIRDJjr6xScmw1ZXMg=/0x0:4000x2664/984x0/smart/filters:strip_icc()/i.s3.glbimg.com/v1/AUTH_08fbf48bc0524877943fe86e43087e7a/internal_photos/bs/2017/R/7/DQgXEfTYeuOyVdzR3hBg/5d-mark-iii-2.jpg",
+    "http://192.168.59.1:3000/professional-camera.png",
+  ];
+
   if (!product && !isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -340,21 +364,63 @@ export default function ProductPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
-                    <div className="mb-6">
-              <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">
-                {product.title}
-              </h1>
+                <div className="mb-6">
+                  <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">
+                    {product.title}
+                  </h1>
                 </div>
                 {/* Product Image */}
-                <Card className="overflow-hidden mb-6 bg-card border-border">
+                <Card className="overflow-hidden mb-6 bg-card border-border group">
                   <div className="relative bg-muted aspect-square">
-                    <img
-                      //src={product.images[0] || "/placeholder.svg"}
-                      src={"/professional-camera.png"}
-                      alt={product.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-4 right-4">
+                    <Carousel
+                      plugins={[plugin.current]}
+                      className="w-full h-full"
+                      onMouseEnter={plugin.current.stop}
+                      onMouseLeave={plugin.current.reset}
+                      opts={{
+                        loop: true, 
+                      }}
+                    >
+                      <CarouselContent>
+                        {imagesToShow.map((imageSrc, index) => (
+                          <CarouselItem key={index}>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <div className="relative aspect-square w-full h-full cursor-zoom-in">
+                                  <img
+                                    src={imageSrc}
+                                    alt={`${product.title} - ${index + 1}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              </DialogTrigger>
+
+                              <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 bg-transparent border-none shadow-none flex items-center justify-center">                              
+                                <DialogTitle className="sr-only">
+                                  Visualização ampliada de {product.title}
+                                </DialogTitle>
+                                <DialogDescription className="sr-only">
+                                  Imagem detalhada do produto em tela cheia.
+                                </DialogDescription>                                
+                                <img
+                                  src={imageSrc}
+                                  alt={`Full screen ${product.title}`}
+                                  className="w-full h-full max-h-[90vh] object-contain rounded-md"
+                                />
+                              </DialogContent>
+                            </Dialog>
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+
+                      <div className="absolute inset-0 flex items-center justify-between p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <CarouselPrevious className="pointer-events-auto relative left-2 translate-x-0 bg-white/80 hover:bg-white" />
+                        <CarouselNext className="pointer-events-auto relative right-2 translate-x-0 bg-white/80 hover:bg-white" />
+                      </div>
+                    </Carousel>
+
+                    {/* Badge do Timer */}
+                    <div className="absolute top-4 right-4 z-10 pointer-events-none">
                       <Badge
                         variant="destructive"
                         className="flex items-center gap-2 px-4 py-2 text-base shadow-lg"
