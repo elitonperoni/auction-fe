@@ -34,7 +34,6 @@ export function ResetPasswordForm({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    debugger
     setIsLoading(true);
     setError(null);    
 

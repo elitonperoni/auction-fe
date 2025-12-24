@@ -25,7 +25,6 @@ export function RecoveryPasswordForm({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-    debugger;
 
     try {
       await authApi.recoveryPassword({ email: email }).then((resp) => {

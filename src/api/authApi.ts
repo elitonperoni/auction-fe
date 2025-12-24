@@ -11,7 +11,6 @@ export class AuthApi {
   async login(request: LoginRequest): Promise<boolean> {
     try {
       await api.post(`${baseRoute}/login`, request).then((resp) => {
-        debugger;
         const token = resp.data;
 
         if (token) {
@@ -42,7 +41,6 @@ export class AuthApi {
   async recoveryPassword(request: RecoveryPasswordRequest): Promise<boolean> {
     try {
       await api.post(`${baseRoute}/recovery-password`, request).then((resp) => {
-        debugger;
         const response = resp.data;
 
         if (response) {
@@ -61,8 +59,6 @@ export class AuthApi {
   async resetPassword(request: ResetPasswordRequest): Promise<boolean> {
     try {
       await api.post(`${baseRoute}/reset-password`, request).then((resp) => {
-        debugger;
-
         const response = resp.data;
 
         if (response) {

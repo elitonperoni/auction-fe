@@ -10,6 +10,9 @@ import {
   CheckCircle2,
   History,
   Loader2,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import ToastSuccess from "@/src/components/Toast/toastNotificationSuccess";
@@ -25,10 +28,12 @@ import {
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import { getSignalRConnection } from "@/src/api/hub";
 import BidForm from "@/src/components/bid-form";
-import { AuctionProductDetail } from "@/src/models/respose/auctionProductDetail";
+import {
+  AuctionProductDetail,
+  BidHistory,
+} from "@/src/models/respose/auctionProductDetail";
 import { auctionApi } from "@/src/api";
-import { KeyValuePair } from "@/src/models/respose/keyValue";
-import { Spinner } from "@/src/components/ui/spinner";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import {
   Carousel,
   CarouselContent,
@@ -44,6 +49,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/src/components/ui/dialog";
+import { formatDate } from "@/src/lib/utils";
 
 interface BidEntry {
   bidder: string;
@@ -61,6 +67,8 @@ export default function ProductPage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const [currentZoomIndex, setCurrentZoomIndex] = useState(0);
 
   useEffect(() => {
     fetchProductDetails(productId);
@@ -79,10 +87,10 @@ export default function ProductPage() {
         setProduct((prevProduct) => {
           if (!prevProduct) return undefined;
 
-          debugger;
-          const newBidEntry: KeyValuePair<string, number> = {
-            key: newBidderName,
-            value: newBidAmount,
+          const newBidEntry: BidHistory = {
+            bidderName: newBidderName,
+            amount: newBidAmount,
+            date: new Date(newBidTime),
           };
           showNotifyBid(isBidOwner, newBidderName, newBidAmount);
 
@@ -213,7 +221,6 @@ export default function ProductPage() {
   // 6. useEffect PRINCIPAL (Gerencia o Ciclo de Vida do SignalR)
   // ---
   useEffect(() => {
-    debugger;
     const groupName = String(productId);
     const connection = getSignalRConnection();
 
@@ -282,7 +289,6 @@ export default function ProductPage() {
   const handlePlaceBid = (bidAmount: number) => {
     const groupName = String(productId); // Garante que é string
     const connection = getSignalRConnection();
-    debugger;
 
     if (
       connection &&
@@ -312,11 +318,11 @@ export default function ProductPage() {
   const plugin = React.useRef(
     Autoplay({ delay: 3500, stopOnInteraction: true })
   );
-
-  const imagesToShow = [
-    "https://s2-techtudo.glbimg.com/FlwsSQQGURIRDJjr6xScmw1ZXMg=/0x0:4000x2664/984x0/smart/filters:strip_icc()/i.s3.glbimg.com/v1/AUTH_08fbf48bc0524877943fe86e43087e7a/internal_photos/bs/2017/R/7/DQgXEfTYeuOyVdzR3hBg/5d-mark-iii-2.jpg",
-    "http://192.168.59.1:3000/professional-camera.png",
-  ];
+  // Função auxiliar para abrir o zoom na foto certa
+  const handleOpenZoom = (index: number) => {
+    setCurrentZoomIndex(index);
+    setIsZoomOpen(true);
+  };
 
   if (!product && !isLoading) {
     return (
@@ -330,6 +336,20 @@ export default function ProductPage() {
       </div>
     );
   }
+
+  const handlePrevious = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentZoomIndex((prev) =>
+      prev === 0 ? product!.photos.length - 1 : prev - 1
+    );
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentZoomIndex((prev) =>
+      prev === product!.photos.length - 1 ? 0 : prev + 1
+    );
+  };
 
   if (isLoading) {
     return (
@@ -371,47 +391,84 @@ export default function ProductPage() {
                 </div>
                 {/* Product Image */}
                 <Card className="overflow-hidden mb-6 bg-card border-border group">
-                  <div className="relative bg-muted aspect-square">
+                  <div className="relative bg-muted aspect-video">
                     <Carousel
                       plugins={[plugin.current]}
                       className="w-full h-full"
                       onMouseEnter={plugin.current.stop}
                       onMouseLeave={plugin.current.reset}
                       opts={{
-                        loop: true, 
+                        loop: true,
                       }}
                     >
                       <CarouselContent>
-                        {imagesToShow.map((imageSrc, index) => (
+                        {product.photos.map((imageSrc, index) => (
                           <CarouselItem key={index}>
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <div className="relative aspect-square w-full h-full cursor-zoom-in">
-                                  <img
-                                    src={imageSrc}
-                                    alt={`${product.title} - ${index + 1}`}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                              </DialogTrigger>
-
-                              <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 bg-transparent border-none shadow-none flex items-center justify-center">                              
-                                <DialogTitle className="sr-only">
-                                  Visualização ampliada de {product.title}
-                                </DialogTitle>
-                                <DialogDescription className="sr-only">
-                                  Imagem detalhada do produto em tela cheia.
-                                </DialogDescription>                                
+                            <div
+                              className="relative aspect-video w-full h-full cursor-zoom-in overflow-hidden rounded-md border"
+                              onClick={() => handleOpenZoom(index)}
+                            >
+                              <div className="relative aspect-video w-full h-full cursor-zoom-in overflow-hidden rounded-md border">
                                 <img
                                   src={imageSrc}
-                                  alt={`Full screen ${product.title}`}
-                                  className="w-full h-full max-h-[90vh] object-contain rounded-md"
+                                  alt={`${product.title} - ${index + 1}`}
+                                  className="w-full h-full object-cover"
                                 />
-                              </DialogContent>
-                            </Dialog>
+                              </div>
+                            </div>
                           </CarouselItem>
                         ))}
                       </CarouselContent>
+
+                      <Dialog open={isZoomOpen} onOpenChange={setIsZoomOpen}>
+                        <DialogContent className="!max-w-none !w-screen !h-screen p-0 bg-white-950/95 border-none shadow-none overflow-hidden outline-none flex items-center justify-center fixed inset-0 translate-x-0 translate-y-0">
+                          <DialogTitle className="sr-only">
+                            Visualização de {product.title}
+                          </DialogTitle>
+                          <button
+                            onClick={() => setIsZoomOpen(false)}
+                            className="absolute right-4 top-4 z-[60] p-2 text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
+                          >
+                            <X className="w-8 h-8" />
+                          </button>
+
+                          {product.photos.length > 1 && (
+                            <button
+                              onClick={handlePrevious}
+                              className="absolute left-4 top-1/2 -translate-y-1/2 z-[60] p-2 text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
+                            >
+                              <ChevronLeft className="w-10 h-10" />
+                            </button>
+                          )}
+
+                          {product.photos.length > 1 && (
+                            <button
+                              onClick={handleNext}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 z-[60] p-2 text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
+                            >
+                              <ChevronRight className="w-10 h-10" />
+                            </button>
+                          )}
+
+                          <div className="w-full h-full flex items-center justify-center">
+                            <TransformWrapper
+                              key={currentZoomIndex}
+                              initialScale={1}
+                            >
+                              <TransformComponent
+                                wrapperClass="!w-screen !h-screen"
+                                contentClass="flex items-center justify-center w-full h-full"
+                              >
+                                <img
+                                  src={product.photos[currentZoomIndex]}
+                                  alt="Zoom"
+                                  className="max-w-full max-h-full w-auto h-auto object-contain"
+                                />
+                              </TransformComponent>
+                            </TransformWrapper>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
 
                       <div className="absolute inset-0 flex items-center justify-between p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                         <CarouselPrevious className="pointer-events-auto relative left-2 translate-x-0 bg-white/80 hover:bg-white" />
@@ -535,29 +592,29 @@ export default function ProductPage() {
                       </div>
                       <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                         {product.bidHistory.length > 0 ? (
-                          (
-                            product.bidHistory as KeyValuePair<string, number>[]
-                          ).map((bid, index: number) => (
-                            <div
-                              key={`${bid.key}-${index}`}
-                              className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border"
-                            >
-                              <div>
-                                <p className="font-semibold text-foreground">
-                                  {bid.key}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {/* {bid.time} */}
+                          (product.bidHistory as BidHistory[]).map(
+                            (bid, index: number) => (
+                              <div
+                                key={`${bid.date}-${index}`}
+                                className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border"
+                              >
+                                <div>
+                                  <p className="font-semibold text-foreground">
+                                    {bid.bidderName}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {formatDate(bid.date)}
+                                  </p>
+                                </div>
+                                <p className="font-bold text-foreground text-lg">
+                                  {bid.amount.toLocaleString("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL",
+                                  })}
                                 </p>
                               </div>
-                              <p className="font-bold text-foreground text-lg">
-                                {bid.value.toLocaleString("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL",
-                                })}
-                              </p>
-                            </div>
-                          ))
+                            )
+                          )
                         ) : (
                           <Alert className="bg-secondary/20 border-secondary">
                             <AlertDescription>

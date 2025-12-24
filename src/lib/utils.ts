@@ -1,14 +1,30 @@
-import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export function isEmpty(obj: any) {
   return (
-    obj === null || 
-    obj === undefined || 
-    (typeof obj === "object" && Object.keys(obj).length === 0) 
+    obj === null ||
+    obj === undefined ||
+    (typeof obj === "object" && Object.keys(obj).length === 0)
   );
+}
+
+export function formatDate(date: Date): string {
+  if (date === null || date === undefined) {
+    return "";
+  }
+
+  return Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(new Date(date));
 }
