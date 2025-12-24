@@ -5,6 +5,7 @@ interface ButtonProps {
     readonly children: React.ReactNode;
     readonly variant?: "default" | "outline" | "ghost" | "link";
     readonly isLoading?: boolean;
+    readonly disabled?: boolean;
     readonly isSubmit?: boolean;
     readonly className?: string;
     readonly onClick?: () => void;
@@ -14,6 +15,7 @@ export default function ButtonCustom({
     children, 
     variant,
     isLoading, 
+    disabled,
     isSubmit,
     className,
     onClick, 
@@ -24,7 +26,7 @@ export default function ButtonCustom({
         variant={variant ?? "default"}
         type={isSubmit ? "submit" : "button"} 
         onClick={onClick}
-        disabled={isLoading}                
+        disabled={isLoading || disabled}                
         className={`cursor-pointer ${className ?? "w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 text-lg"}`}        
         >
       {isLoading 
