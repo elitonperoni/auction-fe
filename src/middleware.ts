@@ -17,41 +17,30 @@ export function middleware(request: NextRequest) {
     "/login", 
     "/reset-password", 
     "/recovery-password",     
-    "/register"
+    "/register",
   ];
 
-  // 4. Verifica se a rota acessada é pública
   const isPublicPath = publicPaths.some((path) => {
-    // Se a rota pública for a raiz '/', exigimos que seja EXATAMENTE igual
     if (path === "/") {
       return pathname === "/";
     }
-    // Para outras rotas (ex: /login), pode usar o startsWith (para pegar /login/esqueceu-senha, etc)
     return pathname.startsWith(path);
   });
 
-  // --- LÓGICA DE REDIRECIONAMENTO ---
-
-  // Se a rota é pública, deixe passar
   if (isPublicPath) {
     return NextResponse.next();
   }
 
-  // Se a rota NÃO é pública e o usuário NÃO tem token,
-  // redirecione para /login
   if (!token) {
     const loginUrl = new URL("/login", request.url);
-    // (Opcional) Adiciona a URL original para redirecionar de volta após o login
     loginUrl.searchParams.set("from", pathname);
 
     return NextResponse.redirect(loginUrl);
   }
 
-  // Se a rota não é pública e o usuário TEM token, deixe passar
   return NextResponse.next();
 }
 
-// 5. Configuração do Matcher (Quais rotas o Middleware deve rodar)
 export const config = {
   matcher: [
     /*

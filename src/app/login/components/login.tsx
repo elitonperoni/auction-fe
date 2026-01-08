@@ -73,8 +73,8 @@ export function LoginForm({
                   type="email"
                   placeholder="m@email.com"
                   required
-                  value={email} // <-- MUDANÇA: Controla o valor
-                  onChange={(e) => setEmail(e.target.value)} // <-- MUDANÇA: Atualiza o estado
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
                 />
               </Field>
               <Field>
@@ -85,8 +85,8 @@ export function LoginForm({
                   id="password"
                   type="password"
                   required
-                  value={password} // <-- MUDANÇA: Controla o valor
-                  onChange={(e) => setPassword(e.target.value)} // <-- MUDANÇA: Atualiza o estado
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
                 />
               </Field>
               <Field>

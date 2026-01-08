@@ -1,4 +1,4 @@
-"use client"; // <-- MUDANÇA: Necessário para usar estado e eventos
+"use client"; 
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -83,8 +83,8 @@ export function RegisterForm({
          <Button
           variant="ghost"
           size="icon"
-          className="absolute left-4 top-4" // Fixa no canto esquerdo
-          onClick={() => router.back()} // Volta para a página anterior
+          className="absolute left-4 top-4" 
+          onClick={() => router.back()} 
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
