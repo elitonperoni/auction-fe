@@ -1,9 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import * as signalR from "@microsoft/signalr";
 import { useRouter, useParams } from "next/navigation";
-import { Clock, Heart, Share2, CheckCircle2, History } from "lucide-react";
+import {
+  Clock,
+  Heart,
+  Share2,
+  CheckCircle2,
+  History,
+  Loader2,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import ToastSuccess from "@/src/components/Toast/toastNotificationSuccess";
 import ToastError from "@/src/components/Toast/toastNotificationError";
@@ -18,67 +28,28 @@ import {
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import { getSignalRConnection } from "@/src/api/hub";
 import BidForm from "@/src/components/bid-form";
-
-interface ProductDetail {
-  id: string;
-  title: string;
-  image: string;
-  currentBid: number;
-  minBid: number;
-  bids: number;
-  timeLeft: string;
-  category: string;
-  description: string;
-  seller: string;
-  sellerRating: number;
-  condition: string;
-  location: string;
-  bidHistory: Array<{ bidder: string; amount: number; time: string }>;
-}
-
-const mockProductDetails: Record<string, ProductDetail> = {
-  "1": {
-    id: "1",
-    title: "Relógio Suíço Vintage",
-    image: "/vintage-swiss-watch.jpg",
-    currentBid: 450,
-    minBid: 500,
-    bids: 12,
-    timeLeft: "2h 30m",
-    category: "Relógios",
-    description:
-      "Relógio suíço de luxo dos anos 1970, em perfeito estado de funcionamento. Caixa de ouro 18K, pulseira original de couro. Acompanha certificado de autenticidade.",
-    seller: "Colecionador Premium",
-    sellerRating: 4.8,
-    condition: "Excelente",
-    location: "São Paulo, SP",
-    bidHistory: [
-      { bidder: "Usuário123", amount: 450, time: "há 5 minutos" },
-      { bidder: "Usuário456", amount: 420, time: "há 15 minutos" },
-      { bidder: "Usuário789", amount: 400, time: "há 1 hora" },
-    ],
-  },
-  "863ca937-a969-4938-af92-11dd82303420": {
-    id: "863ca937-a969-4938-af92-11dd82303420",
-    title: "Câmera Fotográfica Profissional",
-    image: "/professional-camera.png",
-    currentBid: 1200,
-    minBid: 1300,
-    bids: 8,
-    timeLeft: "5h 15m",
-    category: "Eletrônicos",
-    description:
-      "Câmera DSLR profissional com lente 24-70mm. Sensor full-frame, 45MP. Praticamente nova, com menos de 1000 disparos.",
-    seller: "Fotógrafo Profissional",
-    sellerRating: 4.9,
-    condition: "Como Nova",
-    location: "Rio de Janeiro, RJ",
-    bidHistory: [
-      { bidder: "Usuário111", amount: 1200, time: "há 2 minutos" },
-      { bidder: "Usuário222", amount: 1150, time: "há 20 minutos" },
-    ],
-  },
-};
+import {
+  AuctionProductDetail,
+  BidHistory,
+} from "@/src/models/respose/auctionProductDetail";
+import { auctionApi } from "@/src/api";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/src/components/ui/dialog";
+import { formatDate } from "@/src/lib/utils";
 
 interface BidEntry {
   bidder: string;
@@ -90,29 +61,19 @@ export default function ProductPage() {
   const router = useRouter();
   const params = useParams();
   const productId = String(params?.id);
-  const initialProduct = mockProductDetails[productId];
+  const [timeLeft, setTimeLeft] = useState<string>("");
   const [bidSuccess, setBidSuccess] = useState(false);
-  const [product, setProduct] = useState<ProductDetail | undefined>(
-    initialProduct
-  );
+  const [product, setProduct] = useState<AuctionProductDetail>();
   const [isFavorite, setIsFavorite] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const [currentZoomIndex, setCurrentZoomIndex] = useState(0);
 
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">
-            Produto não encontrado
-          </h1>
-          <Button onClick={() => router.push("/")}>Voltar para Home</Button>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    fetchProductDetails(productId);
+  }, []);
 
- 
-  /** Handler para "ReceiveNewBid": Quando um novo lance chega. */
   const handleNewBid = useCallback(
     (
       receivedProductId: string,
@@ -126,32 +87,97 @@ export default function ProductPage() {
         setProduct((prevProduct) => {
           if (!prevProduct) return undefined;
 
-          const newBidEntry: BidEntry = {
-            bidder: newBidderName,
+          const newBidEntry: BidHistory = {
+            bidderName: newBidderName,
             amount: newBidAmount,
-            time: newBidTime,
+            date: new Date(newBidTime),
           };
           showNotifyBid(isBidOwner, newBidderName, newBidAmount);
 
           return {
             ...prevProduct,
             currentBid: newBidAmount,
-            bids: newTotalBids,
+            bidsCounts: newTotalBids,
+            //bids: newTotalBids,
             bidHistory: [newBidEntry, ...prevProduct.bidHistory], // Adiciona no topo
           };
         });
       }
     },
-    [productId] 
+    [productId]
   );
 
+  useEffect(() => {
+    if (!product?.endDate) return;
+
+    const calculateTimeLeft = () => {
+      const now = new Date().getTime();
+      const target = new Date(product.endDate).getTime();
+      const difference = target - now;
+
+      // Se o tempo acabou
+      if (difference <= 0) {
+        setTimeLeft("Leilão Encerrado");
+        //setIsEnded(true);
+        return;
+      }
+
+      // Cálculos matemáticos para dias, horas, minutos e segundos
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor(
+        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+      );
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      // Formatação para adicionar o zero à esquerda (ex: 09 em vez de 9)
+      const pad = (num: number) => num.toString().padStart(2, "0");
+
+      // Monta a string final. Você pode personalizar o formato aqui.
+      // Exemplo: "01d 02h 30m 45s" ou apenas "02:30:45"
+      if (days > 0) {
+        setTimeLeft(
+          `${pad(days)}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`
+        );
+      } else {
+        setTimeLeft(`${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`);
+      }
+    };
+
+    // Atualiza imediatamente ao montar
+    calculateTimeLeft();
+
+    // Cria o intervalo de 1 segundo
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    // Limpa o intervalo quando o componente desmonta (Evita memory leaks)
+    return () => clearInterval(timer);
+  }, [product?.endDate]);
+
+  async function fetchProductDetails(id: string) {
+    setIsLoading(true);
+    await auctionApi
+      .getDetail(id)
+      .then((data) => {
+        setProduct(data);
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error("Erro ao buscar detalhes do produto:", error);
+        setIsLoading(false);
+      });
+  }
+
   /** Handler para "FullAuctionState": Recebe o estado completo pós-reconexão. */
-  const handleFullStateUpdate = useCallback((fullState: ProductDetail) => {
-    console.log("Estado completo recebido (pós-reconexão):", fullState);
-    // Substitui o estado, garantindo a reconciliação
-    //setProduct(fullState);
-    setIsReconnecting(false); // Parou de reconectar
-  }, []); // Sem dependências, pois só usa 'setProduct' e 'setIsReconnecting'
+  const handleFullStateUpdate = useCallback(
+    (fullState: AuctionProductDetail) => {
+      console.log("Estado completo recebido (pós-reconexão):", fullState);
+      // Substitui o estado, garantindo a reconciliação
+      //setProduct(fullState);
+      setIsReconnecting(false); // Parou de reconectar
+    },
+    []
+  ); // Sem dependências, pois só usa 'setProduct' e 'setIsReconnecting'
 
   // ---
   // 5. HANDLERS DE CICLO DE VIDA (com useCallback)
@@ -195,7 +221,6 @@ export default function ProductPage() {
   // 6. useEffect PRINCIPAL (Gerencia o Ciclo de Vida do SignalR)
   // ---
   useEffect(() => {
-    debugger
     const groupName = String(productId);
     const connection = getSignalRConnection();
 
@@ -264,7 +289,6 @@ export default function ProductPage() {
   const handlePlaceBid = (bidAmount: number) => {
     const groupName = String(productId); // Garante que é string
     const connection = getSignalRConnection();
-    debugger
 
     if (
       connection &&
@@ -274,9 +298,7 @@ export default function ProductPage() {
       connection
         .invoke("SendBid", groupName, bidAmount.toString())
         .then(() => {
-          console.log(
-            `Lance de R$${bidAmount} enviado para ${groupName}.`
-          );
+          console.log(`Lance de R$${bidAmount} enviado para ${groupName}.`);
           // O 'setBidSuccess(true)' deve vir do 'handleNewBid'
           // se 'isBidOwner' for verdadeiro
         })
@@ -293,211 +315,375 @@ export default function ProductPage() {
     }
   };
 
-  return (
-    <main className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            {/* Product Image */}
-            <Card className="overflow-hidden mb-6 bg-card border-border">
-              <div className="relative bg-muted aspect-square">
-                <img
-                  src={product.image || "/placeholder.svg"}
-                  alt={product.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-4 right-4">
-                  <Badge
-                    variant="destructive"
-                    className="flex items-center gap-2 px-4 py-2 text-base shadow-lg"
-                  >
-                    <Clock className="w-5 h-5" />
-                    {product.timeLeft}
-                  </Badge>
-                </div>
-              </div>
-            </Card>
+  const plugin = React.useRef(
+    Autoplay({ delay: 3500, stopOnInteraction: true })
+  );
+  // Função auxiliar para abrir o zoom na foto certa
+  const handleOpenZoom = (index: number) => {
+    setCurrentZoomIndex(index);
+    setIsZoomOpen(true);
+  };
 
-            {/* Product Info with Tabs */}
-            <Tabs defaultValue="details" className="w-full">
-              {/* 1. Inclusão da TabsList para navegação */}
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger
-                  value="details"
-                  className="flex items-center gap-2"
-                >
-                  <CheckCircle2 className="h-4 w-4" /> Detalhes do Produto
-                </TabsTrigger>
-                <TabsTrigger
-                  value="history"
-                  className="flex items-center gap-2"
-                >
-                  <History className="h-4 w-4" /> Histórico de Lances
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="details" className="space-y-6">
-                <Card className="p-6 bg-card border-border">
-                  <h1 className="text-3xl font-bold text-foreground mb-4">
-                    {product.title}
-                  </h1>
-
-                  <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-border">
-                    <div>
-                      <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
-                        Categoria
-                      </p>
-                      <Badge variant="secondary">{product.category}</Badge>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
-                        Condição
-                      </p>
-                      <Badge variant="outline">{product.condition}</Badge>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
-                        Localização
-                      </p>
-                      <p className="font-semibold text-foreground">
-                        {product.location}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
-                        Total de Lances
-                      </p>
-                      <p className="font-semibold text-foreground">
-                        {product.bids}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mb-6">
-                    <h3 className="font-bold text-foreground mb-3">
-                      Descrição
-                    </h3>
-                    <p className="text-foreground/80 leading-relaxed">
-                      {product.description}
-                    </p>
-                  </div>
-                  <Card className="p-4 bg-muted border-border">
-                    <h3 className="font-bold text-foreground mb-3">Vendedor</h3>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-foreground">
-                          {product.seller}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          ⭐ {product.sellerRating} (Avaliação)
-                        </p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        className="border-border bg-transparent"
-                      >
-                        Contatar Vendedor
-                      </Button>
-                    </div>
-                  </Card>
-                </Card>
-              </TabsContent>
-
-              {/* 2. Seção Histórico de Lances Completa */}
-              <TabsContent value="history">
-                <Card className="p-6 bg-card border-border">
-                  <h3 className="text-2xl font-bold text-foreground mb-4">
-                    Histórico de Lances
-                  </h3>
-                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                    {product.bidHistory.length > 0 ? (
-                      product.bidHistory.map(
-                        (
-                          bid: { bidder: string; time: string; amount: number },
-                          index: number
-                        ) => (
-                          <div
-                            key={`${bid.bidder}-${index}`}
-                            className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border"
-                          >
-                            <div>
-                              <p className="font-semibold text-foreground">
-                                {bid.bidder}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {bid.time}
-                              </p>
-                            </div>
-                            <p className="font-bold text-foreground text-lg">
-                              R$ {bid.amount.toLocaleString("pt-BR")}
-                            </p>
-                          </div>
-                        )
-                      )
-                    ) : (
-                      <Alert className="bg-secondary/20 border-secondary">
-                        <AlertDescription>
-                          Ainda não há lances para este produto. Seja o primeiro
-                          a dar um lance!
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          <div className="lg:col-span-1">
-            <Card className="p-6 bg-card border-border sticky top-24">
-              {/* Current Bid */}
-              <div className="mb-6 pb-6 border-b border-border">
-                <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
-                  Lance Atual
-                </p>
-                <p className="text-4xl font-bold text-primary mb-2">
-                  R$ {product.currentBid.toLocaleString("pt-BR")}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Mínimo: R$ {product.minBid.toLocaleString("pt-BR")}
-                </p>
-              </div>
-              {/* Bid Form */}
-              <BidForm
-                currentBid={product.currentBid}
-                minBid={product.minBid}
-                successBid={bidSuccess}
-                onPlaceBid={handlePlaceBid}
-              />
-              {/* Action Buttons e Info Box */}
-              <div className="flex gap-2 mt-4">
-                <Button
-                  onClick={() => setIsFavorite(!isFavorite)}
-                  variant={isFavorite ? "default" : "outline"}
-                  className="flex-1"
-                >
-                  <Heart
-                    className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`}
-                  />
-                  Favoritar
-                </Button>
-                <Button variant="outline" className="flex-1 bg-transparent">
-                  <Share2 className="w-5 h-5" />
-                  Compartilhar
-                </Button>
-              </div>
-              <Alert className="mt-6 bg-muted border-border">
-                <CheckCircle2 className="h-4 w-4 text-primary" />
-                <AlertDescription className="text-foreground">
-                  ✓ Pagamento seguro garantido
-                  <br />✓ Autenticidade verificada
-                  <br />✓ Frete incluído na venda
-                </AlertDescription>
-              </Alert>
-            </Card>
-          </div>
+  if (!product && !isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">
+            Produto não encontrado
+          </h1>
+          <Button onClick={() => router.push("/")}>Voltar para Home</Button>
         </div>
       </div>
-    </main>
+    );
+  }
+
+  const handlePrevious = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentZoomIndex((prev) =>
+      prev === 0 ? product!.photos.length - 1 : prev - 1
+    );
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentZoomIndex((prev) =>
+      prev === product!.photos.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-2">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-muted-foreground text-sm">Carregando produto...</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {isLoading && !product && (
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-2">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-muted-foreground text-sm">Carregando produto...</p>
+        </div>
+      )}
+      {!isLoading && !product && (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">
+              Produto não encontrado
+            </h1>
+            <Button onClick={() => router.push("/")}>Voltar para Home</Button>
+          </div>
+        </div>
+      )}
+
+      {!isLoading && product && (
+        <main className="min-h-screen bg-background">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2">
+                <div className="mb-6">
+                  <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">
+                    {product.title}
+                  </h1>
+                </div>
+                {/* Product Image */}
+                <Card className="overflow-hidden mb-6 bg-card border-border group">
+                  <div className="relative bg-muted aspect-video">
+                    <Carousel
+                      plugins={[plugin.current]}
+                      className="w-full h-full"
+                      onMouseEnter={plugin.current.stop}
+                      onMouseLeave={plugin.current.reset}
+                      opts={{
+                        loop: true,
+                      }}
+                    >
+                      <CarouselContent>
+                        {product.photos.map((imageSrc, index) => (
+                          <CarouselItem key={index}>
+                            <div
+                              className="relative aspect-video w-full h-full cursor-zoom-in overflow-hidden rounded-md border"
+                              onClick={() => handleOpenZoom(index)}
+                            >
+                              <div className="relative aspect-video w-full h-full cursor-zoom-in overflow-hidden rounded-md border">
+                                <img
+                                  src={imageSrc}
+                                  alt={`${product.title} - ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            </div>
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+
+                      <Dialog open={isZoomOpen} onOpenChange={setIsZoomOpen}>
+                        <DialogContent className="!max-w-none !w-screen !h-screen p-0 bg-white-950/95 border-none shadow-none overflow-hidden outline-none flex items-center justify-center fixed inset-0 translate-x-0 translate-y-0">
+                          <DialogTitle className="sr-only">
+                            Visualização de {product.title}
+                          </DialogTitle>
+                          <button
+                            onClick={() => setIsZoomOpen(false)}
+                            className="absolute right-4 top-4 z-[60] p-2 text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
+                          >
+                            <X className="w-8 h-8" />
+                          </button>
+
+                          {product.photos.length > 1 && (
+                            <button
+                              onClick={handlePrevious}
+                              className="absolute left-4 top-1/2 -translate-y-1/2 z-[60] p-2 text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
+                            >
+                              <ChevronLeft className="w-10 h-10" />
+                            </button>
+                          )}
+
+                          {product.photos.length > 1 && (
+                            <button
+                              onClick={handleNext}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 z-[60] p-2 text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
+                            >
+                              <ChevronRight className="w-10 h-10" />
+                            </button>
+                          )}
+
+                          <div className="w-full h-full flex items-center justify-center">
+                            <TransformWrapper
+                              key={currentZoomIndex}
+                              initialScale={1}
+                            >
+                              <TransformComponent
+                                wrapperClass="!w-screen !h-screen"
+                                contentClass="flex items-center justify-center w-full h-full"
+                              >
+                                <img
+                                  src={product.photos[currentZoomIndex]}
+                                  alt="Zoom"
+                                  className="max-w-full max-h-full w-auto h-auto object-contain"
+                                />
+                              </TransformComponent>
+                            </TransformWrapper>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+
+                      <div className="absolute inset-0 flex items-center justify-between p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <CarouselPrevious className="pointer-events-auto relative left-2 translate-x-0 bg-white/80 hover:bg-white" />
+                        <CarouselNext className="pointer-events-auto relative right-2 translate-x-0 bg-white/80 hover:bg-white" />
+                      </div>
+                    </Carousel>
+
+                    {/* Badge do Timer */}
+                    <div className="absolute top-4 right-4 z-10 pointer-events-none">
+                      <Badge
+                        variant="destructive"
+                        className="flex items-center gap-2 px-4 py-2 text-base shadow-lg"
+                      >
+                        <Clock className="w-5 h-5" />
+                        {timeLeft}
+                      </Badge>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Product Info with Tabs */}
+                <Tabs defaultValue="details" className="w-full">
+                  {/* 1. Inclusão da TabsList para navegação */}
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsTrigger
+                      value="details"
+                      className="flex items-center gap-2"
+                    >
+                      <CheckCircle2 className="h-4 w-4" /> Detalhes do Produto
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="history"
+                      className="flex items-center gap-2"
+                    >
+                      <History className="h-4 w-4" /> Histórico de Lances
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="details" className="space-y-6">
+                    <Card className="p-6 bg-card border-border">
+                      <h1 className="text-3xl font-bold text-foreground mb-4">
+                        {product.title}
+                      </h1>
+
+                      <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-border">
+                        <div>
+                          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+                            Categoria
+                          </p>
+                          <Badge variant="secondary">{product.category}</Badge>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+                            Condição
+                          </p>
+                          <Badge variant="outline">{product.condition}</Badge>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+                            Localização
+                          </p>
+                          <p className="font-semibold text-foreground">
+                            {product.location}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+                            Total de Lances
+                          </p>
+                          <p className="font-semibold text-foreground">
+                            {product.bidsCounts}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mb-6">
+                        <h3 className="font-bold text-foreground mb-3">
+                          Descrição
+                        </h3>
+                        <p className="text-foreground/80 leading-relaxed">
+                          {product.description}
+                        </p>
+                      </div>
+                      <Card className="p-4 bg-muted border-border">
+                        <h3 className="font-bold text-foreground mb-3">
+                          Vendedor
+                        </h3>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-foreground">
+                              {product.seller}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {/* ⭐ {product.sellerRating} (Avaliação) */}⭐{" "}
+                              {"4.9"} (Avaliação)
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            className="border-border bg-transparent"
+                          >
+                            Contatar Vendedor
+                          </Button>
+                        </div>
+                      </Card>
+                    </Card>
+                  </TabsContent>
+
+                  {/* 2. Seção Histórico de Lances Completa */}
+                  <TabsContent value="history">
+                    <Card className="p-6 bg-card border-border">
+                      <div className="flex items-center justify-between mb-4">
+                        {/* Título à Esquerda */}
+                        <h3 className="text-2xl font-bold text-foreground">
+                          Histórico de Lances
+                        </h3>
+
+                        {/* Quantidade à Direita */}
+                        <span className="text-lg text-muted-foreground mr-6">
+                          {product.bidsCounts} lances
+                        </span>
+                      </div>
+                      <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                        {product.bidHistory.length > 0 ? (
+                          (product.bidHistory as BidHistory[]).map(
+                            (bid, index: number) => (
+                              <div
+                                key={`${bid.date}-${index}`}
+                                className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border"
+                              >
+                                <div>
+                                  <p className="font-semibold text-foreground">
+                                    {bid.bidderName}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {formatDate(bid.date)}
+                                  </p>
+                                </div>
+                                <p className="font-bold text-foreground text-lg">
+                                  {bid.amount.toLocaleString("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL",
+                                  })}
+                                </p>
+                              </div>
+                            )
+                          )
+                        ) : (
+                          <Alert className="bg-secondary/20 border-secondary">
+                            <AlertDescription>
+                              Ainda não há lances para este produto. Seja o
+                              primeiro a dar um lance!
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              <div className="lg:col-span-1">
+                <Card className="p-6 bg-card border-border sticky top-24">
+                  {/* Current Bid */}
+                  <div className="mb-6 pb-6 border-b border-border">
+                    <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
+                      Lance Atual
+                    </p>
+                    <p className="text-4xl font-bold text-primary mb-2">
+                      R$ {product.currentBid.toLocaleString("pt-BR")}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Mínimo: R$ {product.minBid.toLocaleString("pt-BR")}
+                    </p>
+                  </div>
+                  {/* Bid Form */}
+                  <BidForm
+                    currentBid={product.currentBid}
+                    minBid={product.minBid}
+                    successBid={bidSuccess}
+                    onPlaceBid={handlePlaceBid}
+                  />
+                  {/* Action Buttons e Info Box */}
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      onClick={() => setIsFavorite(!isFavorite)}
+                      variant={isFavorite ? "default" : "outline"}
+                      className="flex-1"
+                    >
+                      <Heart
+                        className={`w-5 h-5 ${
+                          isFavorite ? "fill-current" : ""
+                        }`}
+                      />
+                      Favoritar
+                    </Button>
+                    <Button variant="outline" className="flex-1 bg-transparent">
+                      <Share2 className="w-5 h-5" />
+                      Compartilhar
+                    </Button>
+                  </div>
+                  <Alert className="mt-6 bg-muted border-border">
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                    <AlertDescription className="text-foreground">
+                      ✓ Pagamento seguro garantido
+                      <br />✓ Autenticidade verificada
+                      <br />✓ Frete incluído na venda
+                    </AlertDescription>
+                  </Alert>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </main>
+      )}
+    </>
   );
 
   function showNotifyBid(

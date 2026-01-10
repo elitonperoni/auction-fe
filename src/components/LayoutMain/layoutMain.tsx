@@ -1,10 +1,12 @@
 "use client";
 
-import { Gavel } from "lucide-react";
+import { Gavel, LogIn, LogOut } from "lucide-react";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { authApi } from "@/src/api";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
+import { TooltipProvider, TooltipTrigger, Tooltip, TooltipContent } from "../ui/tooltip";
 
 export function LayoutMain({
   children,
@@ -13,10 +15,12 @@ export function LayoutMain({
 }>) {
   const router = useRouter();
 
-  function logout(){
+  function logout() {
     authApi.logout();
     router.push("/login");
   }
+
+  const isAuthenticated = !!Cookies.get("auth-token");
 
   return (
     <main className="min-h-screen bg-background">
@@ -33,10 +37,31 @@ export function LayoutMain({
                 </h1>
               </div>
             </Link>
-            <Button onClick={logout} className="bg-primary-foreground text-primary hover:bg-secondary font-semibold">
-              Sair
-            </Button>             
-          </div>          
+
+            <div className="flex items-center gap-4">
+              <div className="text-primary-foreground font-medium">
+                {isAuthenticated
+                  ? `Olá ${Cookies.get("username") || "Convidado"}!`
+                  : ""}
+              </div>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={logout} 
+                      className="bg-primary-foreground text-primary hover:bg-secondary font-semibold cursor-pointer"
+                    >
+                      {isAuthenticated ? <LogOut /> : <LogIn />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isAuthenticated ? "Encerrar sessão" : "Fazer login"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
         </div>
       </header>
       {children}
