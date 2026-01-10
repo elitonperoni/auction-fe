@@ -49,7 +49,7 @@ export function LayoutMain({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      onClick={isAuthenticated ? logout : logout} 
+                      onClick={logout} 
                       className="bg-primary-foreground text-primary hover:bg-secondary font-semibold cursor-pointer"
                     >
                       {isAuthenticated ? <LogOut /> : <LogIn />}
