@@ -1,4 +1,4 @@
-"use client"; // <-- MUDANÇA: Necessário para usar estado e eventos
+"use client"; 
 
 import { useState } from "react"; 
 import { useRouter, useSearchParams } from "next/navigation";
