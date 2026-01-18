@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Noto_Sans } from "next/font/google";
+import { Providers } from "../store/providers";
 
 const font = Noto_Sans({ subsets: ["latin"] });
 
@@ -17,9 +18,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="pt-br">
       <body className={`${font.className} antialiased`}>
-          {children}
+          <Providers>{children}</Providers>
           <Analytics />
       </body>
     </html>
