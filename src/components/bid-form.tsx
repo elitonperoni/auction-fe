@@ -14,6 +14,7 @@ interface BidFormProps {
   currentBid: number;
   minBid: number;
   successBid: boolean;
+  isLoading: boolean;
   onPlaceBid: (bidAmount: number) => void; // A função para disparar o evento SignalR
 }
 
@@ -21,11 +22,13 @@ export default function BidForm({
   currentBid,
   minBid,
   successBid,
+  isLoading,
   onPlaceBid,
 }: BidFormProps) {
   const [bidAmount, setBidAmount] = useState<string>("");
   const [error, setError] = useState<string>("");
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);  
+
   const handleBidChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setBidAmount(value);
@@ -66,6 +69,7 @@ export default function BidForm({
     // 4. Ação do SignalR: Chama a função do componente pai (ProductPage)
     // para que ela use o connection.invoke()
     onPlaceBid(bid);
+    //setIsLoading(false);
 
     // 5. Feedback e Limpeza
     //setSuccess(true); // Assumimos sucesso momentaneamente, mas o ideal é que o 'success'
@@ -163,6 +167,7 @@ export default function BidForm({
       </div>
       <ButtonCustom
         disabled={!termsAccepted || isEmpty(bidAmount)}
+        isLoading={isLoading}
         onClick={handleSubmitBid}
       >
         Fazer Lance

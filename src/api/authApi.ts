@@ -1,3 +1,4 @@
+import { useDispatch } from "react-redux";
 import ToastError from "../components/Toast/toastNotificationError";
 import { LoginRequest } from "../models/request/authRequest";
 import { RecoveryPasswordRequest } from "../models/request/recoveryPasswordRequest";
@@ -5,24 +6,32 @@ import { RegisterRequest } from "../models/request/registerRequest";
 import { ResetPasswordRequest } from "../models/request/resetPasswordRequest";
 import api from "./api";
 import Cookies from "js-cookie";
+import { store } from "../store/store";
+import { setUser } from "../store/slices/userSlice";
 
 const baseRoute: string = "users";
 export class AuthApi {
   async login(request: LoginRequest): Promise<boolean> {
     try {
-      await api.post(`${baseRoute}/login`, request).then((resp) => {
-        debugger
+      await api.post(`${baseRoute}/login`, request).then((resp) => {        
         const response = resp.data;
 
         if (response) {
           Cookies.set("auth-token", response.token, {
-            expires: 1, 
-            secure: process.env.NODE_ENV === "production", 
+            expires: 1,
+            secure: process.env.NODE_ENV === "production",
             path: "/",
           });
+          
+          store.dispatch(
+            setUser({
+              id: response.id,
+              name: response.name,
+            }),
+          );
 
-           Cookies.set("username", response.userName, {
-            expires: 1, 
+          Cookies.set("username", response.userName, {
+            expires: 1,
             secure: process.env.NODE_ENV === "production",
             path: "/",
           });
@@ -41,7 +50,7 @@ export class AuthApi {
   }
 
   async register(request: RegisterRequest): Promise<any> {
-      return await api.post(`${baseRoute}/register`, request);  
+    return await api.post(`${baseRoute}/register`, request);
   }
 
   async recoveryPassword(request: RecoveryPasswordRequest): Promise<boolean> {

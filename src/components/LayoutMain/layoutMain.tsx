@@ -1,12 +1,12 @@
 "use client";
 
-import { Gavel, LogIn, LogOut } from "lucide-react";
-import { Button } from "../ui/button";
+import { Gavel } from "lucide-react";
 import Link from "next/link";
 import { authApi } from "@/src/api";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
-import { TooltipProvider, TooltipTrigger, Tooltip, TooltipContent } from "../ui/tooltip";
+import UserGreeting from './components/userGreeting';
+import { RootState } from "@/src/store/store";
+import { useSelector } from "react-redux";
 
 export function LayoutMain({
   children,
@@ -14,13 +14,12 @@ export function LayoutMain({
   children: React.ReactNode;
 }>) {
   const router = useRouter();
+  const user = useSelector((state: RootState) => state.user);
 
   function logout() {
     authApi.logout();
     router.push("/login");
-  }
-
-  const isAuthenticated = !!Cookies.get("auth-token");
+  }  
 
   return (
     <main className="min-h-screen bg-background">
@@ -40,26 +39,12 @@ export function LayoutMain({
 
             <div className="flex items-center gap-4">
               <div className="text-primary-foreground font-medium">
-                {isAuthenticated
-                  ? `Olá ${Cookies.get("username") || "Convidado"}!`
-                  : ""}
-              </div>
-
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={logout} 
-                      className="bg-primary-foreground text-primary hover:bg-secondary font-semibold cursor-pointer"
-                    >
-                      {isAuthenticated ? <LogOut /> : <LogIn />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{isAuthenticated ? "Encerrar sessão" : "Fazer login"}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                <UserGreeting
+                  isAuthenticated={user.isAuthenticated}
+                  username={user.name || "Convidado"}
+                  action={logout}
+                />                
+              </div>             
             </div>
           </div>
         </div>
