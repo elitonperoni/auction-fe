@@ -13,7 +13,6 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    debugger
     const token = Cookies.get('auth-token'); 
 
     if (token) {

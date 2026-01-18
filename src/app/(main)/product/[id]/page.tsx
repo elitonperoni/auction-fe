@@ -45,11 +45,11 @@ import Autoplay from "embla-carousel-autoplay";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogTitle,
-  DialogTrigger,
 } from "@/src/components/ui/dialog";
 import { formatDate } from "@/src/lib/utils";
+import {  useSelector } from "react-redux";
+import { RootState } from "@/src/store/store";
 
 interface BidEntry {
   bidder: string;
@@ -66,12 +66,14 @@ export default function ProductPage() {
   const [product, setProduct] = useState<AuctionProductDetail>();
   const [isFavorite, setIsFavorite] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingScreen, setIsLoadingScreen] = useState(false);
+  const [isLoadingBid, setIsLoadingBid] = useState(false);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const [currentZoomIndex, setCurrentZoomIndex] = useState(0);
+  const user = useSelector((state: RootState) => state.user);
 
-  useEffect(() => {
-    fetchProductDetails(productId);
+  useEffect(() => {    
+    fetchProductDetails(productId);  
   }, []);
 
   const handleNewBid = useCallback(
@@ -79,10 +81,10 @@ export default function ProductPage() {
       receivedProductId: string,
       newBidAmount: number,
       newTotalBids: number,
+      newBidderId: string,
       newBidderName: string,
       newBidTime: string,
-      isBidOwner: boolean
-    ) => {
+    ) => {      
       if (receivedProductId === productId) {
         setProduct((prevProduct) => {
           if (!prevProduct) return undefined;
@@ -92,19 +94,20 @@ export default function ProductPage() {
             amount: newBidAmount,
             date: new Date(newBidTime),
           };
-          showNotifyBid(isBidOwner, newBidderName, newBidAmount);
+          showNotifyBid(newBidderId == user.id, newBidderName, newBidAmount);
+          setIsLoadingBid(false);
 
           return {
             ...prevProduct,
             currentBid: newBidAmount,
             bidsCounts: newTotalBids,
-            //bids: newTotalBids,
+            bids: newTotalBids,
             bidHistory: [newBidEntry, ...prevProduct.bidHistory], // Adiciona no topo
           };
         });
       }
     },
-    [productId]
+    [productId],
   );
 
   useEffect(() => {
@@ -125,7 +128,7 @@ export default function ProductPage() {
       // Cálculos matemáticos para dias, horas, minutos e segundos
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
       const hours = Math.floor(
-        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
       );
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
@@ -137,7 +140,7 @@ export default function ProductPage() {
       // Exemplo: "01d 02h 30m 45s" ou apenas "02:30:45"
       if (days > 0) {
         setTimeLeft(
-          `${pad(days)}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`
+          `${pad(days)}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`,
         );
       } else {
         setTimeLeft(`${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`);
@@ -155,16 +158,16 @@ export default function ProductPage() {
   }, [product?.endDate]);
 
   async function fetchProductDetails(id: string) {
-    setIsLoading(true);
+    setIsLoadingScreen(true);
     await auctionApi
       .getDetail(id)
       .then((data) => {
         setProduct(data);
-        setIsLoading(false);
+        setIsLoadingScreen(false);
       })
       .catch((error) => {
         console.error("Erro ao buscar detalhes do produto:", error);
-        setIsLoading(false);
+        setIsLoadingScreen(false);
       });
   }
 
@@ -176,7 +179,7 @@ export default function ProductPage() {
       //setProduct(fullState);
       setIsReconnecting(false); // Parou de reconectar
     },
-    []
+    [],
   ); // Sem dependências, pois só usa 'setProduct' e 'setIsReconnecting'
 
   // ---
@@ -204,7 +207,7 @@ export default function ProductPage() {
         }
       })();
     },
-    [productId] // Depende do productId para saber qual grupo/sincronizar
+    [productId], // Depende do productId para saber qual grupo/sincronizar
   );
 
   /** Handler para 'onreconnecting': Quando a conexão cai e tenta voltar. */
@@ -214,7 +217,7 @@ export default function ProductPage() {
       console.log(`[${groupName}] Tentando reconectar...`, error);
       setIsReconnecting(true);
     },
-    [productId] // Depende do productId para logs
+    [productId], // Depende do productId para logs
   );
 
   // ---
@@ -256,8 +259,6 @@ export default function ProductPage() {
 
     // --- 4. Função de LIMPEZA (Cleanup) ---
     return () => {
-      console.log(`Limpando ouvintes e grupo ${groupName}...`);
-
       // Limpar handlers de DADOS
       connection.off("ReceiveNewBid", handleNewBid);
       connection.off("FullAuctionState", handleFullStateUpdate);
@@ -295,6 +296,7 @@ export default function ProductPage() {
       connection.state === signalR.HubConnectionState.Connected
     ) {
       setBidSuccess(false); // (Do seu código original)
+      setIsLoadingBid(true);
       connection
         .invoke("SendBid", groupName, bidAmount.toString())
         .then(() => {
@@ -316,7 +318,7 @@ export default function ProductPage() {
   };
 
   const plugin = React.useRef(
-    Autoplay({ delay: 3500, stopOnInteraction: true })
+    Autoplay({ delay: 3500, stopOnInteraction: true }),
   );
   // Função auxiliar para abrir o zoom na foto certa
   const handleOpenZoom = (index: number) => {
@@ -324,7 +326,7 @@ export default function ProductPage() {
     setIsZoomOpen(true);
   };
 
-  if (!product && !isLoading) {
+  if (!product && !isLoadingScreen) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -340,18 +342,18 @@ export default function ProductPage() {
   const handlePrevious = (e: React.MouseEvent) => {
     e.stopPropagation();
     setCurrentZoomIndex((prev) =>
-      prev === 0 ? product!.photos.length - 1 : prev - 1
+      prev === 0 ? product!.photos.length - 1 : prev - 1,
     );
   };
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     setCurrentZoomIndex((prev) =>
-      prev === product!.photos.length - 1 ? 0 : prev + 1
+      prev === product!.photos.length - 1 ? 0 : prev + 1,
     );
   };
 
-  if (isLoading) {
+  if (isLoadingScreen) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-2">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -362,13 +364,13 @@ export default function ProductPage() {
 
   return (
     <>
-      {isLoading && !product && (
+      {isLoadingScreen && !product && (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-2">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
           <p className="text-muted-foreground text-sm">Carregando produto...</p>
         </div>
       )}
-      {!isLoading && !product && (
+      {!isLoadingScreen && !product && (
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4">
@@ -379,7 +381,7 @@ export default function ProductPage() {
         </div>
       )}
 
-      {!isLoading && product && (
+      {!isLoadingScreen && product && (
         <main className="min-h-screen bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -613,7 +615,7 @@ export default function ProductPage() {
                                   })}
                                 </p>
                               </div>
-                            )
+                            ),
                           )
                         ) : (
                           <Alert className="bg-secondary/20 border-secondary">
@@ -648,6 +650,7 @@ export default function ProductPage() {
                     currentBid={product.currentBid}
                     minBid={product.minBid}
                     successBid={bidSuccess}
+                    isLoading={isLoadingBid}
                     onPlaceBid={handlePlaceBid}
                   />
                   {/* Action Buttons e Info Box */}
@@ -689,7 +692,7 @@ export default function ProductPage() {
   function showNotifyBid(
     isBidOwner: boolean,
     newBidderName: string,
-    newBidAmount: number
+    newBidAmount: number,
   ) {
     if (isBidOwner) {
       ToastSuccess(`Lance processado com sucesso!`);
@@ -701,8 +704,8 @@ export default function ProductPage() {
     ToastSuccess(
       `Lance superado por ${newBidderName} R$ ${newBidAmount.toLocaleString(
         "pt-BR",
-        { style: "currency", currency: "BRL" }
-      )}`
+        { style: "currency", currency: "BRL" },
+      )}`,
     );
   }
 }
