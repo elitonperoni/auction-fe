@@ -133,13 +133,12 @@ export default function BidForm({
         </p>
         {/* 🎯 AJUSTE DE LAYOUT: Garantir altura uniforme para alinhamento */}
         <div className="grid grid-cols-3 gap-2">
-          {suggestedBids.map((bid) => (
+          {suggestedBids.map((bid, index) => (
             <ButtonCustom
-              key={bid}
+              key={`${bid}-${index}`}
               //type="button"
               onClick={() => setBidAmount(bid.toString())}
-              variant="outline"
-              // ❗ Chave para o alinhamento: h-10 (altura fixa)
+              variant="outline"              
               className="h-10 text-sm font-semibold border-border hover:bg-muted"
             >
               R$ {bid.toLocaleString("pt-BR")}

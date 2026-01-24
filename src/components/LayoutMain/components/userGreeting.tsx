@@ -8,6 +8,16 @@ import {
 } from "../../ui/tooltip";
 import { LogIn, LogOut } from "lucide-react";
 import { Button } from "../../ui/button";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "../../ui/navigation-menu";
+import Link from "next/link";
 
 interface UserGreeting {
   readonly isAuthenticated: boolean;
@@ -50,7 +60,7 @@ export default function UserGreeting({
             <p>{isAuthenticated ? "Encerrar sessão" : "Fazer login"}</p>
           </TooltipContent>
         </Tooltip>
-      </TooltipProvider>
+      </TooltipProvider>     
     </div>
   );
 }

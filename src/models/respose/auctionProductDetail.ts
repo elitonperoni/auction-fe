@@ -22,3 +22,21 @@ export interface BidHistory{
   date: Date;
   amount: number;
 }
+
+export interface AuctionListResponse
+{
+  id: string;
+  title: string;
+  currentPrice: number;
+  bidCount: number;
+  imageUrl: string;
+  endDate: Date;
+}
+
+export interface CreateAuctionRequest {
+  title: string;
+  description: string;
+  startingPrice: number;
+  endDate: Date;
+  images: File[];
+}
