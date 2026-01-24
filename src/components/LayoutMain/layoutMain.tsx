@@ -15,6 +15,8 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "../ui/navigation-menu";
+import React from "react";
+import { RoutesScreenPaths } from "@/src/utils/routesPaths";
 
 export function LayoutMain({
   children,
@@ -29,23 +31,67 @@ export function LayoutMain({
     router.push("/login");
   }
 
+
+  const ListItem = ({
+    title,
+    children,
+    href,
+    ...props
+  }: React.ComponentPropsWithoutRef<"li"> & { href: string }) => {
+    return (
+      <li {...props} className="list-none">
+        <NavigationMenuLink asChild>
+          <Link
+            href={href}
+            className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:!bg-slate-100 group"
+          >
+            <div className="flex flex-col gap-1">
+              <div className="text-sm font-semibold leading-none !text-slate-900">
+                {title}
+              </div>
+              <div className="text-xs !text-slate-500 line-clamp-2">
+                {children}
+              </div>
+            </div>
+          </Link>
+        </NavigationMenuLink>
+      </li>
+    )
+  }
+
   return (
     <main className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-primary border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-           
+            <NavigationMenu viewport={false}>
+              <NavigationMenuList>
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className="!bg-transparent !border-none !shadow-none p-0 h-auto hover:!bg-transparent data-[state=open]:!bg-transparent">
+                    <div className="bg-primary-foreground p-2 rounded-lg transition-transform hover:scale-105 active:scale-95 shadow-sm">
+                      <Gavel className="w-6 h-6 text-primary" />
+                    </div>
+                  </NavigationMenuTrigger>
 
-            <Link href="/" className="flex items-center gap-3">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary-foreground p-2 rounded-lg">
-                  <Gavel className="w-6 h-6 text-primary" />
-                </div>
-                <h1 className="text-2xl font-bold text-primary-foreground">
+                  <NavigationMenuContent className="!bg-white border border-slate-200 shadow-xl rounded-md">
+                    <ul className="grid w-[240px] gap-1 !bg-white p-2 list-none">
+
+                      <ListItem href={RoutesScreenPaths.REGISTER} title="Anuncie um produto">
+                        Cadastre seu produto para venda agora mesmo.
+                      </ListItem>
+
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+              <button onClick={() => router.push(RoutesScreenPaths.HOME)}
+                className="flex items-center cursor-pointer gap-2 ml-4 bg-transparent border-none p-0 hover:opacity-80 transition-opacity">
+                <h1 className="text-2xl font-bold text-primary-foreground" >
                   LeilãoMax
                 </h1>
-              </div>
-            </Link>
+              </button>
+
+            </NavigationMenu>
 
             <div className="flex items-center gap-4">
               <div className="text-primary-foreground font-medium">
