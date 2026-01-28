@@ -33,7 +33,6 @@ export default function BidForm({
     const value = e.target.value;
     setBidAmount(value);
     setError("");
-    //setSuccess(false);
   };
 
   const handleSubmitBid = () => {
@@ -48,7 +47,6 @@ export default function BidForm({
       return;
     }
 
-    debugger;
     if (bid <= currentBid) {
       setError(
         `Seu lance (R$ ${bid.toLocaleString(

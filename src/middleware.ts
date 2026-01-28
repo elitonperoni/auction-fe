@@ -52,6 +52,6 @@ export const config = {
      *
      * Isso garante que o middleware rode em TODAS as suas páginas.
      */
-   '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

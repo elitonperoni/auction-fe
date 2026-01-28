@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
 import { CalendarIcon, UploadCloud, X } from "lucide-react";
-
+import { ptBR } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -178,7 +178,7 @@ export default function CreateAuctionForm() {
                               )}
                             >
                               {field.value ? (
-                                format(field.value, "PPP")
+                                format(field.value, "PPP", { locale: ptBR })
                               ) : (
                                 <span>Selecione uma data</span>
                               )}
@@ -193,6 +193,7 @@ export default function CreateAuctionForm() {
                             onSelect={field.onChange}
                             disabled={(date) => date < new Date()}
                             autoFocus
+                            locale={ptBR}
                           />
                         </PopoverContent>
                       </Popover>

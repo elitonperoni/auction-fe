@@ -1,7 +1,6 @@
 import {
   AuctionListResponse,
   AuctionProductDetail,
-  CreateAuctionRequest,
 } from "../models/respose/auctionProductDetail";
 import api from "./api";
 
@@ -24,7 +23,6 @@ export class AuctionApi {
     return await api
       .get(`${baseRoute}/list`)
       .then((resp) => {
-        debugger;
         return resp.data;
       })
       .catch((error) => {
