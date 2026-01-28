@@ -18,6 +18,7 @@ export class AuthApi {
 
         if (response) {
           Cookies.set("auth-token", response.token, {
+            expires: 7,
             secure: true,
             path: "/",
           });
@@ -65,6 +66,7 @@ export class AuthApi {
 
       if (response?.token && response?.refreshToken) {
         Cookies.set("auth-token", response.token, {
+          expires: 7,
           secure: true,
           path: "/",
         });
