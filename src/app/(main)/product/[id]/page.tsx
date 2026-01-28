@@ -42,13 +42,9 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/src/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import { formatDate } from "@/src/lib/utils";
-import {  useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { RootState } from "@/src/store/store";
 
 interface BidEntry {
@@ -72,8 +68,8 @@ export default function ProductPage() {
   const [currentZoomIndex, setCurrentZoomIndex] = useState(0);
   const user = useSelector((state: RootState) => state.user);
 
-  useEffect(() => {    
-    fetchProductDetails(productId);  
+  useEffect(() => {
+    fetchProductDetails(productId);
   }, []);
 
   const handleNewBid = useCallback(
@@ -84,7 +80,7 @@ export default function ProductPage() {
       newBidderId: string,
       newBidderName: string,
       newBidTime: string,
-    ) => {      
+    ) => {
       if (receivedProductId === productId) {
         setProduct((prevProduct) => {
           if (!prevProduct) return undefined;
@@ -102,7 +98,7 @@ export default function ProductPage() {
             currentBid: newBidAmount,
             bidsCounts: newTotalBids,
             bids: newTotalBids,
-            bidHistory: [newBidEntry, ...prevProduct.bidHistory], // Adiciona no topo
+            bidHistory: [newBidEntry, ...prevProduct.bidHistory],
           };
         });
       }
@@ -118,14 +114,11 @@ export default function ProductPage() {
       const target = new Date(product.endDate).getTime();
       const difference = target - now;
 
-      // Se o tempo acabou
       if (difference <= 0) {
         setTimeLeft("Leilão Encerrado");
-        //setIsEnded(true);
         return;
       }
 
-      // Cálculos matemáticos para dias, horas, minutos e segundos
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
       const hours = Math.floor(
         (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
@@ -133,11 +126,8 @@ export default function ProductPage() {
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-      // Formatação para adicionar o zero à esquerda (ex: 09 em vez de 9)
       const pad = (num: number) => num.toString().padStart(2, "0");
 
-      // Monta a string final. Você pode personalizar o formato aqui.
-      // Exemplo: "01d 02h 30m 45s" ou apenas "02:30:45"
       if (days > 0) {
         setTimeLeft(
           `${pad(days)}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`,
@@ -147,13 +137,10 @@ export default function ProductPage() {
       }
     };
 
-    // Atualiza imediatamente ao montar
     calculateTimeLeft();
 
-    // Cria o intervalo de 1 segundo
     const timer = setInterval(calculateTimeLeft, 1000);
 
-    // Limpa o intervalo quando o componente desmonta (Evita memory leaks)
     return () => clearInterval(timer);
   }, [product?.endDate]);
 
@@ -171,7 +158,6 @@ export default function ProductPage() {
       });
   }
 
-  /** Handler para "FullAuctionState": Recebe o estado completo pós-reconexão. */
   const handleFullStateUpdate = useCallback(
     (fullState: AuctionProductDetail) => {
       console.log("Estado completo recebido (pós-reconexão):", fullState);
@@ -180,20 +166,14 @@ export default function ProductPage() {
       setIsReconnecting(false); // Parou de reconectar
     },
     [],
-  ); // Sem dependências, pois só usa 'setProduct' e 'setIsReconnecting'
+  );
 
-  // ---
-  // 5. HANDLERS DE CICLO DE VIDA (com useCallback)
-  // ---
-
-  /** Handler para 'onreconnected': Quando a conexão é re-estabelecida. */
   const handleReconnect = useCallback(
     (connectionId?: string) => {
       const groupName = String(productId);
       console.log(`[${groupName}] Reconectado com ID: ${connectionId}`);
       setIsReconnecting(false);
 
-      // IIFE para rodar código async dentro de um handler síncrono
       (async () => {
         try {
           const connection = getSignalRConnection();
@@ -207,22 +187,18 @@ export default function ProductPage() {
         }
       })();
     },
-    [productId], // Depende do productId para saber qual grupo/sincronizar
+    [productId],
   );
 
-  /** Handler para 'onreconnecting': Quando a conexão cai e tenta voltar. */
   const handleReconnecting = useCallback(
     (error?: Error) => {
       const groupName = String(productId);
       console.log(`[${groupName}] Tentando reconectar...`, error);
       setIsReconnecting(true);
     },
-    [productId], // Depende do productId para logs
+    [productId],
   );
 
-  // ---
-  // 6. useEffect PRINCIPAL (Gerencia o Ciclo de Vida do SignalR)
-  // ---
   useEffect(() => {
     const groupName = String(productId);
     const connection = getSignalRConnection();
@@ -268,12 +244,12 @@ export default function ProductPage() {
       connection.onreconnecting = () => {};
 
       // Sair do grupo
-      // if (connection.state === signalR.HubConnectionState.Connected) {
-      //   connection
-      //     .invoke("OnDisconnectedAsync", groupName)
-      //     .then(() => console.log(`[${groupName}] Saiu do grupo.`))
-      //     .catch((err) => console.log("Erro ao sair do grupo:", err));
-      // }
+      if (connection.state === signalR.HubConnectionState.Connected) {
+        connection
+          .invoke("OnDisconnectedAsync", groupName)
+          .then(() => console.log(`[${groupName}] Saiu do grupo.`))
+          .catch((err) => console.log("Erro ao sair do grupo:", err));
+      }
     };
   }, [
     // Array de dependências ESTÁVEL
@@ -351,6 +327,19 @@ export default function ProductPage() {
     setCurrentZoomIndex((prev) =>
       prev === product!.photos.length - 1 ? 0 : prev + 1,
     );
+  };
+
+  const handleShare = () => {
+    const currentUrl = window.location.href;
+
+    navigator.clipboard
+      .writeText(currentUrl)
+      .then(() => {
+        ToastSuccess("Link copiado para a área de transferência!");
+      })
+      .catch((err) => {
+        console.error("Erro ao copiar link: ", err);
+      });
   };
 
   if (isLoadingScreen) {
@@ -667,7 +656,7 @@ export default function ProductPage() {
                       />
                       Favoritar
                     </Button>
-                    <Button variant="outline" className="flex-1 bg-transparent">
+                    <Button onClick={handleShare} variant="outline" className="flex-1 bg-transparent">
                       <Share2 className="w-5 h-5" />
                       Compartilhar
                     </Button>
