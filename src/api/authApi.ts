@@ -16,7 +16,6 @@ export class AuthApi {
       await api.post(`${baseRoute}/login`, request).then((resp) => {
         const response = resp.data;
 
-        debugger;
         if (response) {
           store.dispatch(
             setUser({
@@ -99,7 +98,6 @@ export class AuthApi {
   }
 
   async logout(): Promise<void> {
-    debugger
     await this.sendLogout();
     store.dispatch(setUser({ id: "", name: "" }));
     window.location.href = "/login";

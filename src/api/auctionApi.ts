@@ -31,7 +31,6 @@ export class AuctionApi {
   }
 
   async create(request: FormData): Promise<string> {
-
     return await api
       .post(`${baseRoute}/new`, request, {
         headers: {
@@ -39,7 +38,6 @@ export class AuctionApi {
         },
       })
       .then((resp) => {
-        debugger;
         return resp.data;
       })
       .catch((error) => {
