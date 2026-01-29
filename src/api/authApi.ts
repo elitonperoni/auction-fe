@@ -47,7 +47,6 @@ export class AuthApi {
         },
       );
 
-      ToastSuccess("Token atualizado com sucesso.");
       return null;
     } catch {
       this.logout();
