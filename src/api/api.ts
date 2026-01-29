@@ -18,13 +18,11 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-
-      debugger
       try {
          await authApi.refreshToken();
         return api(originalRequest);
       } catch (refreshError) {
-        window.location.href = "/login";
+         await authApi.logout();
         return Promise.reject(refreshError);
       }
     }
