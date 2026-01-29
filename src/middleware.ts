@@ -1,17 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// O nome do cookie que você definiu no Passo 1
 const AUTH_COOKIE_NAME = "auth-token";
 
 export function middleware(request: NextRequest) {
-  // 1. Pega o token do cookie da requisição
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
 
-  // 2. Pega a URL que o usuário está tentando acessar
   const { pathname } = request.nextUrl;
 
-  // 3. Define quais rotas são públicas
   const publicPaths = [
     "/",
     "/login", 

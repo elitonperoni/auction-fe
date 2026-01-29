@@ -16,19 +16,8 @@ export class AuthApi {
       await api.post(`${baseRoute}/login`, request).then((resp) => {
         const response = resp.data;
 
+        debugger;
         if (response) {
-          Cookies.set("auth-token", response.token, {
-            expires: 7,
-            secure: true,
-            path: "/",
-          });
-
-          Cookies.set("refresh-token", response.refreshToken, {
-            expires: 7,
-            secure: true,
-            path: "/",
-          });
-
           store.dispatch(
             setUser({
               id: response.id,
@@ -50,40 +39,16 @@ export class AuthApi {
 
   async refreshToken(): Promise<string | null> {
     try {
-      const authToken = Cookies.get("auth-token");
-      const refreshToken = Cookies.get("refresh-token");
-
-      if (!refreshToken || !authToken) {
-        this.logout();
-        return null;
-      }
-
-      const resp = await api.post(`${baseRoute}/refresh-token`, {
-        token: authToken,
-        refreshToken: refreshToken,
-      });
-      const response = resp.data;
-
-      if (response?.token && response?.refreshToken) {
-        Cookies.set("auth-token", response.token, {
-          expires: 7,
-          secure: true,
-          path: "/",
-        });
-
-        if (response.refreshToken) {
-          Cookies.set("refresh-token", response.refreshToken, {
-            expires: 7,
-            secure: true,
-            path: "/",
-          });
-        }
-
-        return response.token;
-      }
+      await api.post(
+        `${baseRoute}/refresh-token`,
+        {},
+        {
+          withCredentials: true,
+        },
+      );
 
       return null;
-    } catch  {
+    } catch {
       this.logout();
       return null;
     }
@@ -129,9 +94,14 @@ export class AuthApi {
     }
   }
 
-  logout() {
-    Cookies.remove("auth-token");
-    Cookies.remove("refresh-token");
+  async sendLogout(): Promise<void> {
+    await api.post(`${baseRoute}/logout`, {}, { withCredentials: true });
+  }
+
+  async logout(): Promise<void> {
+    debugger
+    await this.sendLogout();
+    store.dispatch(setUser({ id: "", name: "" }));
     window.location.href = "/login";
   }
 }
