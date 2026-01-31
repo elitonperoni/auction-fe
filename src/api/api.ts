@@ -19,7 +19,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-         await authApi.refreshToken();
+        await authApi.refreshToken();
         return api(originalRequest);
       } catch (refreshError) {
          await authApi.logout();

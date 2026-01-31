@@ -4,7 +4,6 @@ import { RecoveryPasswordRequest } from "../models/request/recoveryPasswordReque
 import { RegisterRequest } from "../models/request/registerRequest";
 import { ResetPasswordRequest } from "../models/request/resetPasswordRequest";
 import api from "./api";
-import Cookies from "js-cookie";
 import { store } from "../store/store";
 import { setUser } from "../store/slices/userSlice";
 import ToastSuccess from "../components/Toast/toastNotificationSuccess";
@@ -36,7 +35,7 @@ export class AuthApi {
     }
   }
 
-  async refreshToken(): Promise<string | null> {
+  async refreshToken(): Promise<void> {
     try {
       await api.post(
         `${baseRoute}/refresh-token`,
@@ -45,11 +44,8 @@ export class AuthApi {
           withCredentials: true,
         },
       );
-
-      return null;
     } catch {
       this.logout();
-      return null;
     }
   }
 
@@ -59,17 +55,16 @@ export class AuthApi {
 
   async recoveryPassword(request: RecoveryPasswordRequest): Promise<boolean> {
     try {
-      await api.post(`${baseRoute}/recovery-password`, request).then((resp) => {
-        const response = resp.data;
+      const resp = await api.post(`${baseRoute}/recovery-password`, request);
+      const response = resp.data;
 
-        if (response) {
-          ToastSuccess("Email de recuperação enviado com sucesso.");
-        } else {
-          ToastError("Falha ao realizar login");
-          return false;
-        }
-      });
-      return true;
+      if (response) {
+        ToastSuccess("Email de recuperação enviado com sucesso.");
+        return true;
+      } else {
+        ToastError("Falha ao realizar login");
+        return false;
+      }
     } catch {
       return false;
     }
@@ -77,17 +72,16 @@ export class AuthApi {
 
   async resetPassword(request: ResetPasswordRequest): Promise<boolean> {
     try {
-      await api.post(`${baseRoute}/reset-password`, request).then((resp) => {
-        const response = resp.data;
+      const resp = await api.post(`${baseRoute}/reset-password`, request);
+      const response = resp.data;
 
-        if (response) {
-          ToastSuccess("Senha alterada com sucesso.");
-        } else {
-          ToastError("Falha ao realizar login");
-          return false;
-        }
-      });
-      return true;
+      if (response) {
+        ToastSuccess("Senha alterada com sucesso.");
+        return true;
+      } else {
+        ToastError("Falha ao realizar login");
+        return false;
+      }
     } catch {
       return false;
     }
