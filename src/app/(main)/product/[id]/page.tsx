@@ -47,6 +47,7 @@ import { formatDate } from "@/src/lib/utils";
 import { useSelector } from "react-redux";
 import { RootState } from "@/src/store/store";
 import ToastInfo from "@/src/components/Toast/toastNotificationInfo";
+import { ChannelNames } from "@/src/utils/channerlNames";
 
 interface BidEntry {
   bidder: string;
@@ -160,7 +161,6 @@ export default function ProductPage() {
         setIsLoadingScreen(false);
       })
       .catch((error) => {
-        console.error("Erro ao buscar detalhes do produto:", error);
         setIsLoadingScreen(false);
       });
   }
@@ -206,8 +206,8 @@ export default function ProductPage() {
     const groupName = String(productId);
     const connection = getSignalRConnection();
 
-    connection.on("ReceiveNewBid", handleNewBid);
-    connection.on("ReceiveNotification", handleNotification);
+    connection.on(ChannelNames.ReceiveNewBid, handleNewBid);
+    connection.on(ChannelNames.ReceiveNotification, handleNotification);
 
     connection.onreconnected(handleReconnect);
     connection.onreconnecting(handleReconnecting);
@@ -233,15 +233,15 @@ export default function ProductPage() {
     setup(); 
 
     return () => {
-      connection.off("ReceiveNewBid", handleNewBid);
-      connection.off("ReceiveNotification", handleNotification);
+      connection.off(ChannelNames.ReceiveNewBid, handleNewBid);
+      connection.off(ChannelNames.ReceiveNotification, handleNotification);
 
       connection.onreconnected = () => { };
       connection.onreconnecting = () => { };
 
       if (connection.state === signalR.HubConnectionState.Connected) {
         connection
-          .invoke("OnDisconnectedAsync", groupName)
+          .invoke(ChannelNames.OnDisconnectedAsync, groupName)
           .then(() => console.log(`[${groupName}] Saiu do grupo.`))
           .catch((err) => console.log("Erro ao sair do grupo:", err));
       }
@@ -259,7 +259,7 @@ export default function ProductPage() {
     const connection = getSignalRConnection();
 
     const invokeSendBid = () =>
-      connection.invoke("SendBid", groupName, bidAmount.toString());
+      connection.invoke(ChannelNames.SendBid, groupName, bidAmount.toString());
 
     if (
       connection &&
