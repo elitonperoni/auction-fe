@@ -8,7 +8,7 @@ interface ButtonProps {
     readonly disabled?: boolean;
     readonly isSubmit?: boolean;
     readonly className?: string;
-    readonly onClick?: () => void;
+    readonly onClick?: (e : any) => void;
 }   
 
 export default function ButtonCustom({ 

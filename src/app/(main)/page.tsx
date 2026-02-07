@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SearchAuctionListRequest } from "@/src/models/request/searchAuctionListRequest";
 import ButtonCustom from "@/src/components/Button/button";
 import { Button } from "@/src/components/ui/button";
+import { useParams } from "next/navigation";
 
 const formSchema = z.object({
   searchTerm: z.string().optional(),
@@ -110,7 +111,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">Encontre Produtos Incríveis</h2>
           <p className="text-primary-foreground/90 text-lg max-w-2xl">
-            Participe de leilões emocionantes e ganhe os melhores itens.
+            Participe de leilões emocionantes e compre os melhores itens.
           </p>
         </div>
       </section>
@@ -223,7 +224,7 @@ export default function Home() {
                       {product.title}
                     </h3>
                     <p className="text-sm text-muted-foreground mb-3">
-                      {"product.seller"}
+                      Vendedor: {product.seller}
                     </p>
 
                     <div className="space-y-3 flex-1">
@@ -238,9 +239,9 @@ export default function Home() {
 
                       <div className="flex justify-between text-sm">
                         <div>
-                          <p className="text-muted-foreground">Mínimo</p>
+                          <p className="text-muted-foreground">Valor inicial</p>
                           <p className="font-semibold text-foreground">
-                            R$ {product.currentPrice.toLocaleString("pt-BR")}
+                            R$ {product.startingPrice.toLocaleString("pt-BR")}
                           </p>
                         </div>
                         <div className="text-right">

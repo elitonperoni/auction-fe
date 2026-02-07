@@ -2,7 +2,7 @@ import ToastError from "../components/Toast/toastNotificationError";
 import { LoginRequest } from "../models/request/authRequest";
 import api from "./api";
 import { store } from "../store/store";
-import { setUser, updateExpiration, userSlice } from "../store/slices/userSlice";
+import { setUser, updateExpiration } from "../store/slices/userSlice";
 import ToastSuccess from "../components/Toast/toastNotificationSuccess";
 import { RegisterRequest } from "../models/request/registerRequest";
 import { RecoveryPasswordRequest } from "../models/request/recoveryPasswordRequest";

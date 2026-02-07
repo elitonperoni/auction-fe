@@ -1,7 +1,9 @@
 import { SearchAuctionListRequest } from "../models/request/searchAuctionListRequest";
 import {
+  AuctionListByUserResponse,
   AuctionListResponse,
   AuctionProductDetail,
+  AuctionRegisterDetail,
 } from "../models/respose/auctionProductDetail";
 import { PaginationResponse } from "../models/respose/paginationResponse";
 import api from "./api";
@@ -17,6 +19,17 @@ export class AuctionApi {
       })
       .catch((error) => {
         console.error("Error fetching auction product detail:", error);
+        throw error;
+      });
+  }
+
+   async getRegisterDetail(id: string): Promise<AuctionRegisterDetail> {
+    return await api
+      .get(`${baseRoute}/register-detail/${id}`)
+      .then((resp) => {
+        return resp.data;
+      })
+      .catch((error) => {        
         throw error;
       });
   }
@@ -39,6 +52,17 @@ export class AuctionApi {
           "Content-Type": "multipart/form-data",
         },
       })
+      .then((resp) => {
+        return resp.data;
+      })
+      .catch((error) => {
+        throw error;
+      });
+  }
+
+   async getAuctionsByUser(): Promise<AuctionListByUserResponse[]> {
+    return await api
+      .get(`${baseRoute}/by-userid`)
       .then((resp) => {
         return resp.data;
       })

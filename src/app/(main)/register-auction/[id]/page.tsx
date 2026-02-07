@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -28,83 +28,126 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ToastSuccess from "@/src/components/Toast/toastNotificationSuccess";
 import { auctionApi } from "@/src/api";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import ButtonCustom from "@/src/components/Button/button";
 import { RoutesScreenPaths } from "@/src/utils/routesPaths";
 
-const formSchema = z.object({
-  title: z.string().min(5, "O título deve ter pelo menos 5 caracteres"),
-  description: z
-    .string()
-    .min(20, "Descreva melhor o produto (mín. 20 caracteres)"),
-  initialValue: z
-    .string()
-    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-      message: "O valor inicial deve ser maior que zero",
-    }),
-  endDate: z.date({
-    required_error: "A data de término é obrigatória",
-  }),
-});
 
 export default function CreateAuctionForm() {
-  const [images, setImages] = useState<File[]>([]);
+  const [originalPhotos, setOriginalPhotos] = useState<string[]>([]);
+  const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
+  const [newImages, setNewImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
+
+  const params = useParams();
+  const auctionId = String(params?.id);
+  const isEditing = !!auctionId;
+
+  const formSchema = z.object({
+    title: z.string().min(5, "O título deve ter pelo menos 5 caracteres"),
+    description: z
+      .string()
+      .min(20, "Descreva melhor o produto (mín. 20 caracteres)"),
+    initialValue: z
+      .number()
+      .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+        message: "O valor inicial deve ser maior que zero",
+      }),
+    endDate: z.date({
+      required_error: "A data de término é obrigatória",
+    }),
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       description: "",
-      initialValue: "",
+      initialValue: 0,
     },
   });
+
+  useEffect(() => {
+    if (isEditing) {
+      getDetail();
+    }
+  }, [])
+
+  async function getDetail() {
+    setLoading(true);
+    await auctionApi.getRegisterDetail(auctionId)
+      .then((resp) => {
+        form.setValue("title", resp.title)
+        form.setValue("description", resp.description)
+        form.setValue("initialValue", resp.initialValue)
+        form.setValue("endDate", new Date(resp.endDate))
+        if (resp.photos) {
+          setOriginalPhotos(resp.photos);
+        }
+        setLoading(false);
+      })
+  }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
-      setImages((prev) => [...prev, ...filesArray]);
+      setNewImages((prev) => [...prev, ...filesArray]);
 
       const newPreviews = filesArray.map((file) => URL.createObjectURL(file));
       setPreviews((prev) => [...prev, ...newPreviews]);
     }
   };
 
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-    setPreviews((prev) => prev.filter((_, i) => i !== index));
+  const removeImage = (index: number, isExisting: boolean) => {
+    if (isExisting) {
+      const urlToRemove = originalPhotos[index];
+      setImagesToRemove(prev => [...prev, urlToRemove]);
+      setOriginalPhotos(prev => prev.filter((_, i) => i !== index));
+    } else {
+      setNewImages(prev => prev.filter((_, i) => i !== index));
+    }
   };
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
 
+    debugger
     const formData = new FormData();
+    formData.append("Id", auctionId);
     formData.append("Title", values.title);
     formData.append("Description", values.description);
     formData.append("StartingPrice", Number(values.initialValue).toString());
     formData.append("EndDate", values.endDate.toISOString());
 
-    if (images && images.length > 0) {
-      images.forEach((file) => {
-        formData.append("Images", file);
+    if (newImages && newImages.length > 0) {
+      newImages.forEach((file) => {
+        formData.append("NewImages", file);
       });
     }
 
+    imagesToRemove.forEach(url => formData.append("ImagesToRemove", url));
+
     setLoading(true);
     auctionApi.create(formData).then((response) => {
-      ToastSuccess("Leilão criado com sucesso!");
+      if (isEditing)
+        ToastSuccess("Leilão editado com sucesso!");
+      else
+        ToastSuccess("Leilão criado com sucesso!");
+      
       setLoading(false);
       router.push(RoutesScreenPaths.AUCTION_DETAIL(response));
     });
   }
 
+  if (loading) return (<div className="p-8 text-center">Carregando informações do leilão...</div>)
+
   return (
     <main className="max-w-3xl mx-auto py-10 px-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Criar Novo Leilão</CardTitle>
+          <CardTitle className="text-2xl">{isEditing ? "Editar leilão" : "Criar leilão"}</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -150,6 +193,7 @@ export default function CreateAuctionForm() {
                       <FormLabel>Lance Inicial (R$)</FormLabel>
                       <FormControl>
                         <Input
+                          disabled={isEditing}
                           type="number"
                           step="0.01"
                           placeholder="0,00"
@@ -223,27 +267,36 @@ export default function CreateAuctionForm() {
                   </label>
                 </div>
 
-                {previews.length > 0 && (
+                {(
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mt-4">
-                    {previews.map((src, index) => (
-                      <div
-                        key={`${src}-${index}`}
-                        className="relative group aspect-square rounded-md overflow-hidden border"
-                      >
-                        <img
-                          src={src}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
+
+                    {originalPhotos.map((url, index) => (
+                      <div key={`old-${index}`} className="relative group aspect-square rounded-md overflow-hidden border">
+                        <img src={url} className="w-full h-full object-cover" />
                         <button
                           type="button"
-                          onClick={() => removeImage(index)}
+                          onClick={() => removeImage(index, true)}
                           className="absolute top-1 right-1 bg-destructive text-destructive-foreground p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <X className="w-3 h-3" />
                         </button>
                       </div>
                     ))}
+
+                    {/* Renderizando novos uploads */}
+                    {previews.map((url, index) => (
+                      <div key={`new-${index}`} className="relative group aspect-square rounded-md overflow-hidden border">
+                        <img src={url}  className="w-full h-full object-cover"/>
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index, false)} // Passando 'false' para isExisting
+                          className="absolute top-1 right-1 bg-destructive text-destructive-foreground p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+
                   </div>
                 )}
               </div>

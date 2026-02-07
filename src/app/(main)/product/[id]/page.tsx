@@ -609,15 +609,16 @@ export default function ProductPage() {
                 <Card className="p-6 bg-card border-border sticky top-24">
                   {/* Current Bid */}
                   <div className="mb-6 pb-6 border-b border-border">
-                    <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
-                      Lance Atual
+                    <p className="text-sm text-muted-foreground tracking-wide mb-2">
+                      {product?.bidHistory[0]?.bidderName && "Lance Atual"}
+                      {!product?.bidHistory[0]?.bidderName && "Faça um lance agora mesmo!"}
                     </p>
                     <p className="text-4xl font-bold text-primary mb-2">
                       R$ {product.currentBid.toLocaleString("pt-BR")}
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      Mínimo: R$ {product.minBid.toLocaleString("pt-BR")}
-                    </p>
+                    {product?.bidHistory[0]?.bidderName && (<p className="text-sm text-muted-foreground">
+                      Usuário com maior lance: @{product?.bidHistory[0]?.bidderName}
+                    </p>)}
                   </div>
                   {/* Bid Form */}
                   <BidForm
