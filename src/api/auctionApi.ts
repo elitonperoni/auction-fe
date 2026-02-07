@@ -1,7 +1,9 @@
+import { SearchAuctionListRequest } from "../models/request/searchAuctionListRequest";
 import {
   AuctionListResponse,
   AuctionProductDetail,
 } from "../models/respose/auctionProductDetail";
+import { PaginationResponse } from "../models/respose/paginationResponse";
 import api from "./api";
 
 const baseRoute: string = "auctions";
@@ -19,9 +21,9 @@ export class AuctionApi {
       });
   }
 
-  async getList(): Promise<AuctionListResponse[]> {
+  async getList(request: SearchAuctionListRequest): Promise<PaginationResponse<AuctionListResponse>> {
     return await api
-      .get(`${baseRoute}/list`)
+      .get(`${baseRoute}/list`, { params: request })
       .then((resp) => {
         return resp.data;
       })
