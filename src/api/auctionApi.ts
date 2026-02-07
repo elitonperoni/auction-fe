@@ -1,5 +1,6 @@
 import { SearchAuctionListRequest } from "../models/request/searchAuctionListRequest";
 import {
+  AuctionBidsByUserResponse,
   AuctionListByUserResponse,
   AuctionListResponse,
   AuctionProductDetail,
@@ -23,18 +24,20 @@ export class AuctionApi {
       });
   }
 
-   async getRegisterDetail(id: string): Promise<AuctionRegisterDetail> {
+  async getRegisterDetail(id: string): Promise<AuctionRegisterDetail> {
     return await api
       .get(`${baseRoute}/register-detail/${id}`)
       .then((resp) => {
         return resp.data;
       })
-      .catch((error) => {        
+      .catch((error) => {
         throw error;
       });
   }
 
-  async getList(request: SearchAuctionListRequest): Promise<PaginationResponse<AuctionListResponse>> {
+  async getList(
+    request: SearchAuctionListRequest,
+  ): Promise<PaginationResponse<AuctionListResponse>> {
     return await api
       .get(`${baseRoute}/list`, { params: request })
       .then((resp) => {
@@ -60,9 +63,20 @@ export class AuctionApi {
       });
   }
 
-   async getAuctionsByUser(): Promise<AuctionListByUserResponse[]> {
+  async getAuctionsByUser(): Promise<AuctionListByUserResponse[]> {
     return await api
       .get(`${baseRoute}/by-userid`)
+      .then((resp) => {
+        return resp.data;
+      })
+      .catch((error) => {
+        throw error;
+      });
+  }
+
+   async getAuctionsBidByUser(): Promise<AuctionBidsByUserResponse[]> {
+    return await api
+      .get(`${baseRoute}/bids-by-user`)
       .then((resp) => {
         return resp.data;
       })

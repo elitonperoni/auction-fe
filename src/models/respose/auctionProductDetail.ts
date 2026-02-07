@@ -53,6 +53,22 @@ export interface AuctionListByUserResponse
   actualWinner: string;
   status: string;
 }
+
+export interface AuctionBidsByUserResponse
+{
+  id: string;
+  title: string;
+  currentPrice: number;
+  bidCount: number;
+  userLastBidAmount: number;
+  actualLeader: string;
+  imageUrl: string;
+  endDate: Date;
+  userBidsCount: string;
+  isUserActualLeader: boolean;
+  isUserWinner: boolean;
+}
+
 export interface CreateAuctionRequest {
   title: string;
   description: string;

@@ -9,7 +9,7 @@ import { RoutesScreenPaths } from '@/src/utils/routesPaths';
 import { useRouter } from 'next/navigation';
 import { AuctionListByUserResponse } from '@/src/models/respose/auctionProductDetail';
 
-export default function MyAuctions() {
+export default function AuctionsUserOwner() {
   const [leiloes, setLeiloes] = useState<AuctionListByUserResponse[]>();
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -34,7 +34,7 @@ export default function MyAuctions() {
     <div className="max-w-6xl mx-auto p-6">
       <header className="flex justify-between items-start mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Meus Leilões</h1>
-        <ButtonCustom className="text-white px-6 py-1 rounded-3xl transition" onClick={() => router.push(RoutesScreenPaths.REGISTER())}>
+        <ButtonCustom className="text-white px-6 py-1 rounded-3xl transition" onClick={() => router.push(RoutesScreenPaths.AUCTION_REGISTER())}>
           + Novo Leilão
         </ButtonCustom>
       </header>
@@ -69,16 +69,16 @@ export default function MyAuctions() {
                     <h3 className="text-xl font-semibold text-gray-900">{leilao.title}</h3>
                     
                     <div className="flex flex-wrap gap-2 mt-4">
-                      <Badge className="bg-gray-200 text-black border-none">
+                      <Badge className="bg-gray-200 text-black border-none text-sm py-1.5 px-3">
                         Lance atual: R$ {leilao.currentPrice.toLocaleString('pt-BR')}
                       </Badge>
-                      <Badge className="bg-gray-200 text-black border-none">
+                      <Badge className="bg-gray-200 text-black border-none text-sm py-1.5 px-3">
                         Lances: {leilao.bidCount}
                       </Badge>
                       <Badge className={`border-none ${leilao.actualWinner ? 'bg-green-800 text-white' : 'bg-gray-200 text-black'}`}>
                         Líder: {leilao.actualWinner || "Ninguém"}
                       </Badge>
-                      <Badge className="bg-gray-200 text-black border-none">
+                      <Badge className="bg-gray-200 text-black border-none text-sm py-1.5 px-3">
                         Fim: {new Date(leilao.endDate).toLocaleDateString('pt-BR')}
                       </Badge>
                     </div>
@@ -95,7 +95,7 @@ export default function MyAuctions() {
                     onClick={(e: any) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      router.push(RoutesScreenPaths.REGISTER(leilao.id));
+                      router.push(RoutesScreenPaths.AUCTION_REGISTER(leilao.id));
                     }}
                   >
                     Editar

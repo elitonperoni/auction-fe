@@ -67,7 +67,7 @@ export function LayoutMain({
 
             <NavigationMenu viewport={false} className="relative">
               <NavigationMenuList>
-                <NavigationMenuItem className="relative"> {/* Adicionado relative aqui */}
+                <NavigationMenuItem className="relative"> 
                   <NavigationMenuTrigger className="!bg-transparent !border-none !shadow-none p-0 h-auto hover:!bg-transparent data-[state=open]:!bg-transparent">
                     <div className="bg-primary-foreground p-2 rounded-lg transition-transform hover:scale-105 active:scale-95 shadow-sm">
                       <Gavel className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
@@ -76,18 +76,18 @@ export function LayoutMain({
 
                   <NavigationMenuContent className="absolute left-0 top-full mt-2 w-[85vw] max-w-[240px] !bg-white border border-slate-200 shadow-xl rounded-md z-[60]">
                     <ul className="grid w-[240px] gap-1 p-2 list-none">
-                      <ListItem href={RoutesScreenPaths.REGISTER()} title="Anuncie um produto">
+                      <ListItem href={RoutesScreenPaths.AUCTION_REGISTER()} title="Anuncie um produto">
                         Cadastre seu produto para venda agora mesmo.
                       </ListItem>
                     </ul>
                      <ul className="grid w-[240px] gap-1 p-2 list-none">
-                      <ListItem href={RoutesScreenPaths.MYAUCTIONS} title="Meus leilões">
+                      <ListItem href={RoutesScreenPaths.AUCTIONS_BY_USER} title="Meus leilões">
                         Acompanhe seus leilões e lances recebidos em seus produtos.
                       </ListItem>
                     </ul>
                      <ul className="grid w-[240px] gap-1 p-2 list-none">
-                      <ListItem href={RoutesScreenPaths.MYAUCTIONS} title="Meus lances">
-                        Acompanhe os lances em leilões que você realizou. 
+                      <ListItem href={RoutesScreenPaths.AUCTION_USER_BIDS} title="Meus lances">
+                        Acompanhe os lances em leilões em que você está participando. 
                       </ListItem>
                     </ul>
                   </NavigationMenuContent>                 
