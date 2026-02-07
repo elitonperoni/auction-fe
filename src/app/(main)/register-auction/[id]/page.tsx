@@ -283,13 +283,12 @@ export default function CreateAuctionForm() {
                       </div>
                     ))}
 
-                    {/* Renderizando novos uploads */}
                     {previews.map((url, index) => (
                       <div key={`new-${index}`} className="relative group aspect-square rounded-md overflow-hidden border">
                         <img src={url}  className="w-full h-full object-cover"/>
                         <button
                           type="button"
-                          onClick={() => removeImage(index, false)} // Passando 'false' para isExisting
+                          onClick={() => removeImage(index, false)} 
                           className="absolute top-1 right-1 bg-destructive text-destructive-foreground p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <X size={12} />

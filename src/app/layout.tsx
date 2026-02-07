@@ -9,6 +9,9 @@ const font = Noto_Sans({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Leilão Max",
   description: "Encontre os produtos que deseja com os melhores preços",
+  icons: {
+   icon: '/icon.png'
+  },
   generator: "",
 };
 
