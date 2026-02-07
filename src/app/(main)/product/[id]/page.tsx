@@ -32,7 +32,7 @@ import {
   AuctionProductDetail,
   BidHistory,
 } from "@/src/models/respose/auctionProductDetail";
-import { auctionApi } from "@/src/api";
+import { auctionApi, authApi } from "@/src/api";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import {
   Carousel,
@@ -255,6 +255,8 @@ export default function ProductPage() {
   ]);
 
   const handlePlaceBid = async (bidAmount: number) => {
+    await authApi.ensureValidToken()
+
     const groupName = String(productId);
     const connection = getSignalRConnection();
 

@@ -1,12 +1,12 @@
 import ToastError from "../components/Toast/toastNotificationError";
 import { LoginRequest } from "../models/request/authRequest";
-import { RecoveryPasswordRequest } from "../models/request/recoveryPasswordRequest";
-import { RegisterRequest } from "../models/request/registerRequest";
-import { ResetPasswordRequest } from "../models/request/resetPasswordRequest";
 import api from "./api";
 import { store } from "../store/store";
-import { setUser } from "../store/slices/userSlice";
+import { setUser, updateExpiration, userSlice } from "../store/slices/userSlice";
 import ToastSuccess from "../components/Toast/toastNotificationSuccess";
+import { RegisterRequest } from "../models/request/registerRequest";
+import { RecoveryPasswordRequest } from "../models/request/recoveryPasswordRequest";
+import { ResetPasswordRequest } from "../models/request/resetPasswordRequest";
 
 const baseRoute: string = "users";
 export class AuthApi {
@@ -15,11 +15,14 @@ export class AuthApi {
       await api.post(`${baseRoute}/login`, request).then((resp) => {
         const response = resp.data;
 
+        const expirationTime = Date.now() + (15 * 60 * 1000);
+
         if (response) {
           store.dispatch(
             setUser({
               id: response.id,
               name: response.name,
+              expiresAt: expirationTime
             }),
           );
 
@@ -44,10 +47,37 @@ export class AuthApi {
           withCredentials: true,
         },
       );
+
+       const expirationTime = Date.now() + (15 * 60 * 1000);
+
+        store.dispatch(
+            updateExpiration(expirationTime),);
+
     } catch {
       this.logout();
     }
   }
+
+ async ensureValidToken(): Promise<void> {
+  const state = store.getState();
+  const user = state.user; 
+
+  const now = Date.now();
+  const buffer = 30 * 1000; 
+
+  if (user.expiresAt && (now + buffer) > user.expiresAt) {
+    try {
+      this.refreshToken()
+      
+      const newExpiration = Date.now() + (15 * 60 * 1000); 
+
+      store.dispatch(updateExpiration(newExpiration));
+            
+    } catch {
+      this.logout()
+    }
+  }
+}
 
   async register(request: RegisterRequest): Promise<any> {
     return await api.post(`${baseRoute}/register`, request);
@@ -93,7 +123,7 @@ export class AuthApi {
 
   async logout(): Promise<void> {
     await this.sendLogout();
-    store.dispatch(setUser({ id: "", name: "" }));
+    store.dispatch(setUser({ id: "", name: "", expiresAt: 0 }));
     window.location.href = "/login";
   }
 }
