@@ -68,7 +68,7 @@ export default function BidByUser() {
                                         </h3>
                                         
                                         <div className="flex flex-wrap gap-2">
-                                            {leilao.isUserActualLeader && (
+                                            {leilao.isUserActualLeader && !leilao.isUserWinner && (
                                                 <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-700 text-white">
                                                     Você está vencendo!
                                                 </span>
@@ -81,7 +81,7 @@ export default function BidByUser() {
                                             {leilao.isUserWinner && (
                                                 <div className="flex items-center gap-2 bg-blue-900 text-white px-3 py-1 rounded-full shadow-sm">
                                                     <Gavel className="w-4 h-4" />
-                                                    <span className="text-xs font-medium">Você venceu!</span>
+                                                    <span className="text-xs font-medium">Parabéns você venceu!</span>
                                                 </div>
                                             )}
                                         </div>
