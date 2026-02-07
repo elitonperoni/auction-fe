@@ -1,13 +1,12 @@
 import ToastError from "../components/Toast/toastNotificationError";
 import { LoginRequest } from "../models/request/authRequest";
-import { RecoveryPasswordRequest } from "../models/request/recoveryPasswordRequest";
-import { RegisterRequest } from "../models/request/registerRequest";
-import { ResetPasswordRequest } from "../models/request/resetPasswordRequest";
 import api from "./api";
-import Cookies from "js-cookie";
 import { store } from "../store/store";
-import { setUser } from "../store/slices/userSlice";
+import { setUser, updateExpiration } from "../store/slices/userSlice";
 import ToastSuccess from "../components/Toast/toastNotificationSuccess";
+import { RegisterRequest } from "../models/request/registerRequest";
+import { RecoveryPasswordRequest } from "../models/request/recoveryPasswordRequest";
+import { ResetPasswordRequest } from "../models/request/resetPasswordRequest";
 
 const baseRoute: string = "users";
 export class AuthApi {
@@ -16,11 +15,14 @@ export class AuthApi {
       await api.post(`${baseRoute}/login`, request).then((resp) => {
         const response = resp.data;
 
+        const expirationTime = Date.now() + (15 * 60 * 1000);
+
         if (response) {
           store.dispatch(
             setUser({
               id: response.id,
               name: response.name,
+              expiresAt: expirationTime
             }),
           );
 
@@ -36,7 +38,7 @@ export class AuthApi {
     }
   }
 
-  async refreshToken(): Promise<string | null> {
+  async refreshToken(): Promise<void> {
     try {
       await api.post(
         `${baseRoute}/refresh-token`,
@@ -46,12 +48,36 @@ export class AuthApi {
         },
       );
 
-      return null;
+       const expirationTime = Date.now() + (15 * 60 * 1000);
+
+        store.dispatch(
+            updateExpiration(expirationTime),);
+
     } catch {
       this.logout();
-      return null;
     }
   }
+
+ async ensureValidToken(): Promise<void> {
+  const state = store.getState();
+  const user = state.user; 
+
+  const now = Date.now();
+  const buffer = 30 * 1000; 
+
+  if (user.expiresAt && (now + buffer) > user.expiresAt) {
+    try {
+      this.refreshToken()
+      
+      const newExpiration = Date.now() + (15 * 60 * 1000); 
+
+      store.dispatch(updateExpiration(newExpiration));
+            
+    } catch {
+      this.logout()
+    }
+  }
+}
 
   async register(request: RegisterRequest): Promise<any> {
     return await api.post(`${baseRoute}/register`, request);
@@ -59,17 +85,16 @@ export class AuthApi {
 
   async recoveryPassword(request: RecoveryPasswordRequest): Promise<boolean> {
     try {
-      await api.post(`${baseRoute}/recovery-password`, request).then((resp) => {
-        const response = resp.data;
+      const resp = await api.post(`${baseRoute}/recovery-password`, request);
+      const response = resp.data;
 
-        if (response) {
-          ToastSuccess("Email de recuperação enviado com sucesso.");
-        } else {
-          ToastError("Falha ao realizar login");
-          return false;
-        }
-      });
-      return true;
+      if (response) {
+        ToastSuccess("Email de recuperação enviado com sucesso.");
+        return true;
+      } else {
+        ToastError("Falha ao realizar login");
+        return false;
+      }
     } catch {
       return false;
     }
@@ -77,17 +102,16 @@ export class AuthApi {
 
   async resetPassword(request: ResetPasswordRequest): Promise<boolean> {
     try {
-      await api.post(`${baseRoute}/reset-password`, request).then((resp) => {
-        const response = resp.data;
+      const resp = await api.post(`${baseRoute}/reset-password`, request);
+      const response = resp.data;
 
-        if (response) {
-          ToastSuccess("Senha alterada com sucesso.");
-        } else {
-          ToastError("Falha ao realizar login");
-          return false;
-        }
-      });
-      return true;
+      if (response) {
+        ToastSuccess("Senha alterada com sucesso.");
+        return true;
+      } else {
+        ToastError("Falha ao realizar login");
+        return false;
+      }
     } catch {
       return false;
     }
@@ -99,7 +123,7 @@ export class AuthApi {
 
   async logout(): Promise<void> {
     await this.sendLogout();
-    store.dispatch(setUser({ id: "", name: "" }));
+    store.dispatch(setUser({ id: "", name: "", expiresAt: 0 }));
     window.location.href = "/login";
   }
 }

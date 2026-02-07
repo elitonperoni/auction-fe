@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import * as signalR from "@microsoft/signalr";
 import { useRouter, useParams } from "next/navigation";
 import {
@@ -32,7 +32,7 @@ import {
   AuctionProductDetail,
   BidHistory,
 } from "@/src/models/respose/auctionProductDetail";
-import { auctionApi } from "@/src/api";
+import { auctionApi, authApi } from "@/src/api";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import {
   Carousel,
@@ -46,6 +46,8 @@ import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import { formatDate } from "@/src/lib/utils";
 import { useSelector } from "react-redux";
 import { RootState } from "@/src/store/store";
+import ToastInfo from "@/src/components/Toast/toastNotificationInfo";
+import { ChannelNames } from "@/src/utils/channerlNames";
 
 interface BidEntry {
   bidder: string;
@@ -61,7 +63,6 @@ export default function ProductPage() {
   const [bidSuccess, setBidSuccess] = useState(false);
   const [product, setProduct] = useState<AuctionProductDetail>();
   const [isFavorite, setIsFavorite] = useState(false);
-  const [isReconnecting, setIsReconnecting] = useState(false);
   const [isLoadingScreen, setIsLoadingScreen] = useState(false);
   const [isLoadingBid, setIsLoadingBid] = useState(false);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
@@ -80,10 +81,17 @@ export default function ProductPage() {
       newBidderId: string,
       newBidderName: string,
       newBidTime: string,
+      errorMessage?: string,
     ) => {
       if (receivedProductId === productId) {
         setProduct((prevProduct) => {
           if (!prevProduct) return undefined;
+
+          if (errorMessage) {
+            ToastError(`Lance Rejeitado: ${errorMessage} 🛑`);
+            setIsLoadingBid(false);
+            return prevProduct;
+          }
 
           const newBidEntry: BidHistory = {
             bidderName: newBidderName,
@@ -153,17 +161,14 @@ export default function ProductPage() {
         setIsLoadingScreen(false);
       })
       .catch((error) => {
-        console.error("Erro ao buscar detalhes do produto:", error);
         setIsLoadingScreen(false);
       });
   }
 
-  const handleFullStateUpdate = useCallback(
-    (fullState: AuctionProductDetail) => {
-      console.log("Estado completo recebido (pós-reconexão):", fullState);
-      // Substitui o estado, garantindo a reconciliação
-      //setProduct(fullState);
-      setIsReconnecting(false); // Parou de reconectar
+  const handleNotification = useCallback(
+    (notification: string) => {
+      ToastInfo(notification);
+      setIsLoadingBid(false);
     },
     [],
   );
@@ -172,7 +177,6 @@ export default function ProductPage() {
     (connectionId?: string) => {
       const groupName = String(productId);
       console.log(`[${groupName}] Reconectado com ID: ${connectionId}`);
-      setIsReconnecting(false);
 
       (async () => {
         try {
@@ -194,7 +198,6 @@ export default function ProductPage() {
     (error?: Error) => {
       const groupName = String(productId);
       console.log(`[${groupName}] Tentando reconectar...`, error);
-      setIsReconnecting(true);
     },
     [productId],
   );
@@ -203,15 +206,12 @@ export default function ProductPage() {
     const groupName = String(productId);
     const connection = getSignalRConnection();
 
-    // --- 1. Registrar Handlers de DADOS ---
-    connection.on("ReceiveNewBid", handleNewBid);
-    connection.on("FullAuctionState", handleFullStateUpdate);
+    connection.on(ChannelNames.ReceiveNewBid, handleNewBid);
+    connection.on(ChannelNames.ReceiveNotification, handleNotification);
 
-    // --- 2. Registrar Handlers de CICLO DE VIDA ---
     connection.onreconnected(handleReconnect);
     connection.onreconnecting(handleReconnecting);
 
-    // --- 3. Lógica de INICIALIZAÇÃO e CONEXÃO ---
     const setup = async () => {
       try {
         if (connection.state === signalR.HubConnectionState.Disconnected) {
@@ -220,7 +220,6 @@ export default function ProductPage() {
           console.log(`[${groupName}] Conexão estabelecida.`);
         }
 
-        // Se já estiver conectado (ou acabou de conectar)
         if (connection.state === signalR.HubConnectionState.Connected) {
           console.log(`[${groupName}] Entrando no grupo e sincronizando...`);
           await connection.invoke("JoinAuctionGroup", groupName);
@@ -231,72 +230,58 @@ export default function ProductPage() {
       }
     };
 
-    setup(); // Executa a lógica de setup
+    setup(); 
 
-    // --- 4. Função de LIMPEZA (Cleanup) ---
     return () => {
-      // Limpar handlers de DADOS
-      connection.off("ReceiveNewBid", handleNewBid);
-      connection.off("FullAuctionState", handleFullStateUpdate);
+      connection.off(ChannelNames.ReceiveNewBid, handleNewBid);
+      connection.off(ChannelNames.ReceiveNotification, handleNotification);
 
-      // Limpar handlers de CICLO DE VIDA (atribuir função vazia)
-      connection.onreconnected = () => {};
-      connection.onreconnecting = () => {};
+      connection.onreconnected = () => { };
+      connection.onreconnecting = () => { };
 
-      // Sair do grupo
       if (connection.state === signalR.HubConnectionState.Connected) {
         connection
-          .invoke("OnDisconnectedAsync", groupName)
+          .invoke(ChannelNames.OnDisconnectedAsync, groupName)
           .then(() => console.log(`[${groupName}] Saiu do grupo.`))
           .catch((err) => console.log("Erro ao sair do grupo:", err));
       }
     };
   }, [
-    // Array de dependências ESTÁVEL
     productId,
     handleNewBid,
-    handleFullStateUpdate,
+    handleNotification,
     handleReconnect,
     handleReconnecting,
   ]);
 
-  // ---
-  // 7. AÇÕES DO USUÁRIO (ex: Dar Lance)
-  // ---
-  const handlePlaceBid = (bidAmount: number) => {
-    const groupName = String(productId); // Garante que é string
+  const handlePlaceBid = async (bidAmount: number) => {
+    await authApi.ensureValidToken()
+
+    const groupName = String(productId);
     const connection = getSignalRConnection();
+
+    const invokeSendBid = () =>
+      connection.invoke(ChannelNames.SendBid, groupName, bidAmount.toString());
 
     if (
       connection &&
       connection.state === signalR.HubConnectionState.Connected
     ) {
-      setBidSuccess(false); // (Do seu código original)
+      setBidSuccess(false);
       setIsLoadingBid(true);
-      connection
-        .invoke("SendBid", groupName, bidAmount.toString())
-        .then(() => {
-          console.log(`Lance de R$${bidAmount} enviado para ${groupName}.`);
-          // O 'setBidSuccess(true)' deve vir do 'handleNewBid'
-          // se 'isBidOwner' for verdadeiro
-        })
-        .catch((err) => {
-          console.error("Falha ao Enviar Lance:", err);
-          ToastError("Falha ao Enviar Lance 🛑");
-        });
-    } else {
-      if (isReconnecting) {
-        ToastError("Tentando reconectar. Aguarde para dar o lance.");
-      } else {
-        ToastError("Não foi possível enviar o lance. Falha de conexão");
+
+      try {
+        await invokeSendBid();
+      } catch {
+        ToastError("Erro ao enviar lance. Tente novamente.");
       }
-    }
-  };
+    };
+  }
 
   const plugin = React.useRef(
     Autoplay({ delay: 3500, stopOnInteraction: true }),
   );
-  // Função auxiliar para abrir o zoom na foto certa
+
   const handleOpenZoom = (index: number) => {
     setCurrentZoomIndex(index);
     setIsZoomOpen(true);
@@ -624,15 +609,16 @@ export default function ProductPage() {
                 <Card className="p-6 bg-card border-border sticky top-24">
                   {/* Current Bid */}
                   <div className="mb-6 pb-6 border-b border-border">
-                    <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
-                      Lance Atual
+                    <p className="text-sm text-muted-foreground tracking-wide mb-2">
+                      {product?.bidHistory[0]?.bidderName && "Lance Atual"}
+                      {!product?.bidHistory[0]?.bidderName && "Faça um lance agora mesmo!"}
                     </p>
                     <p className="text-4xl font-bold text-primary mb-2">
                       R$ {product.currentBid.toLocaleString("pt-BR")}
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      Mínimo: R$ {product.minBid.toLocaleString("pt-BR")}
-                    </p>
+                    {product?.bidHistory[0]?.bidderName && (<p className="text-sm text-muted-foreground">
+                      Usuário com maior lance: @{product?.bidHistory[0]?.bidderName}
+                    </p>)}
                   </div>
                   {/* Bid Form */}
                   <BidForm
@@ -650,9 +636,8 @@ export default function ProductPage() {
                       className="flex-1"
                     >
                       <Heart
-                        className={`w-5 h-5 ${
-                          isFavorite ? "fill-current" : ""
-                        }`}
+                        className={`w-5 h-5 ${isFavorite ? "fill-current" : ""
+                          }`}
                       />
                       Favoritar
                     </Button>

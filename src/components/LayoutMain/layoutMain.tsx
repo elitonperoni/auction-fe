@@ -60,54 +60,63 @@ export function LayoutMain({
   }
 
   return (
-   <main className="min-h-screen bg-background">
-  <header className="sticky top-0 z-50 bg-primary border-b border-border shadow-sm">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
-      <div className="flex items-center justify-between gap-2">
-        
-        <NavigationMenu viewport={false} className="relative">
-          <NavigationMenuList>
-            <NavigationMenuItem className="relative"> {/* Adicionado relative aqui */}
-              <NavigationMenuTrigger className="!bg-transparent !border-none !shadow-none p-0 h-auto hover:!bg-transparent data-[state=open]:!bg-transparent">
-                <div className="bg-primary-foreground p-2 rounded-lg transition-transform hover:scale-105 active:scale-95 shadow-sm">
-                  <Gavel className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-                  {/* <ChevronDown className="w-3 h-3 text-primary transition-transform duration-200 group-data-[state=open]:rotate-180" /> */}
-                </div>
-              </NavigationMenuTrigger>
+    <main className="min-h-screen bg-background">
+      <header className="sticky top-0 z-50 bg-primary border-b border-border shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
 
-              <NavigationMenuContent className="absolute left-0 top-full mt-2 w-[85vw] max-w-[240px] !bg-white border border-slate-200 shadow-xl rounded-md z-[60]">
-                <ul className="grid w-[240px] gap-1 p-2 list-none">
-                  <ListItem href={RoutesScreenPaths.REGISTER} title="Anuncie um produto">
-                    Cadastre seu produto para venda agora mesmo.
-                  </ListItem>
-                </ul>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-          </NavigationMenuList>
+            <NavigationMenu viewport={false} className="relative">
+              <NavigationMenuList>
+                <NavigationMenuItem className="relative"> 
+                  <NavigationMenuTrigger className="!bg-transparent !border-none !shadow-none p-0 h-auto hover:!bg-transparent data-[state=open]:!bg-transparent">
+                    <div className="bg-primary-foreground p-2 rounded-lg transition-transform hover:scale-105 active:scale-95 shadow-sm">
+                      <Gavel className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                    </div>
+                  </NavigationMenuTrigger>
 
-          <button 
-            onClick={() => router.push(RoutesScreenPaths.HOME)}
-            className="flex items-center cursor-pointer gap-2 ml-2 sm:ml-4 bg-transparent border-none p-0 hover:opacity-80 transition-opacity"
-          >
-            <h1 className="text-xl sm:text-2xl font-bold text-primary-foreground whitespace-nowrap">
-              LeilãoMax
-            </h1>
-          </button>
-        </NavigationMenu>
+                  <NavigationMenuContent className="absolute left-0 top-full mt-2 w-[85vw] max-w-[240px] !bg-white border border-slate-200 shadow-xl rounded-md z-[60]">
+                    <ul className="grid w-[240px] gap-1 p-2 list-none">
+                      <ListItem href={RoutesScreenPaths.AUCTION_REGISTER()} title="Anuncie um produto">
+                        Cadastre seu produto para venda agora mesmo.
+                      </ListItem>
+                    </ul>
+                     <ul className="grid w-[240px] gap-1 p-2 list-none">
+                      <ListItem href={RoutesScreenPaths.AUCTIONS_BY_USER} title="Meus leilões">
+                        Acompanhe seus leilões e lances recebidos em seus produtos.
+                      </ListItem>
+                    </ul>
+                     <ul className="grid w-[240px] gap-1 p-2 list-none">
+                      <ListItem href={RoutesScreenPaths.AUCTION_USER_BIDS} title="Meus lances">
+                        Acompanhe os lances em leilões em que você está participando. 
+                      </ListItem>
+                    </ul>
+                  </NavigationMenuContent>                 
+                </NavigationMenuItem>                
+              </NavigationMenuList>
 
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-          <div className="text-primary-foreground font-medium text-sm sm:text-base">
-            <UserGreeting
-              isAuthenticated={user.isAuthenticated}
-              username={user.name || "Convidado"}
-              action={logout}
-            />
+              <button
+                onClick={() => router.push(RoutesScreenPaths.HOME)}
+                className="flex items-center cursor-pointer gap-2 ml-2 sm:ml-4 bg-transparent border-none p-0 hover:opacity-80 transition-opacity"
+              >
+                <h1 className="text-xl sm:text-2xl font-bold text-primary-foreground whitespace-nowrap">
+                  LeilãoMax
+                </h1>
+              </button>
+            </NavigationMenu>
+
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+              <div className="text-primary-foreground font-medium text-sm sm:text-base">
+                <UserGreeting
+                  isAuthenticated={user.isAuthenticated}
+                  username={user.name || "Convidado"}
+                  action={logout}
+                />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  </header>
-  {children}
-</main>
+      </header>
+      {children}
+    </main>
   );
 }
