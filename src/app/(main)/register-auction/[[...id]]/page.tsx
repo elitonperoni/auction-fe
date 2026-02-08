@@ -31,6 +31,7 @@ import { auctionApi } from "@/src/api";
 import { useParams, useRouter } from "next/navigation";
 import ButtonCustom from "@/src/components/Button/button";
 import { RoutesScreenPaths } from "@/src/utils/routesPaths";
+import LoadingSpinner from "@/src/components/Loading/loadingSpinner";
 
 
 export default function CreateAuctionForm() {
@@ -42,7 +43,7 @@ export default function CreateAuctionForm() {
   const router = useRouter();
 
   const params = useParams();
-  const auctionId = String(params?.id);
+  const auctionId = params?.id;
   const isEditing = !!auctionId;
 
   const formSchema = z.object({
@@ -77,7 +78,7 @@ export default function CreateAuctionForm() {
 
   async function getDetail() {
     setLoading(true);
-    await auctionApi.getRegisterDetail(auctionId)
+    await auctionApi.getRegisterDetail(String(auctionId))
       .then((resp) => {
         form.setValue("title", resp.title)
         form.setValue("description", resp.description)
@@ -112,10 +113,11 @@ export default function CreateAuctionForm() {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
-
-    debugger
     const formData = new FormData();
-    formData.append("Id", auctionId);
+
+    if (isEditing)
+      formData.append("Id", String(auctionId));
+
     formData.append("Title", values.title);
     formData.append("Description", values.description);
     formData.append("StartingPrice", Number(values.initialValue).toString());
@@ -135,13 +137,15 @@ export default function CreateAuctionForm() {
         ToastSuccess("Leilão editado com sucesso!");
       else
         ToastSuccess("Leilão criado com sucesso!");
-      
+
       setLoading(false);
       router.push(RoutesScreenPaths.AUCTION_DETAIL(response));
     });
   }
 
-  if (loading) return (<div className="p-8 text-center">Carregando informações do leilão...</div>)
+  if (loading) {
+    return <LoadingSpinner />
+  }
 
   return (
     <main className="max-w-3xl mx-auto py-10 px-4">
@@ -285,10 +289,10 @@ export default function CreateAuctionForm() {
 
                     {previews.map((url, index) => (
                       <div key={`new-${index}`} className="relative group aspect-square rounded-md overflow-hidden border">
-                        <img src={url}  className="w-full h-full object-cover"/>
+                        <img src={url} className="w-full h-full object-cover" />
                         <button
                           type="button"
-                          onClick={() => removeImage(index, false)} 
+                          onClick={() => removeImage(index, false)}
                           className="absolute top-1 right-1 bg-destructive text-destructive-foreground p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <X size={12} />
@@ -305,7 +309,7 @@ export default function CreateAuctionForm() {
                 className="w-full mt-4"
                 isSubmit
               >
-                Publicar Leilão
+                {isEditing ? "Salvar" : "Publicar"} Leilão
               </ButtonCustom>
             </form>
           </Form>

@@ -49,12 +49,6 @@ import { RootState } from "@/src/store/store";
 import ToastInfo from "@/src/components/Toast/toastNotificationInfo";
 import { ChannelNames } from "@/src/utils/channerlNames";
 
-interface BidEntry {
-  bidder: string;
-  amount: number;
-  time: string;
-}
-
 export default function ProductPage() {
   const router = useRouter();
   const params = useParams();
@@ -180,14 +174,11 @@ export default function ProductPage() {
 
       (async () => {
         try {
-          const connection = getSignalRConnection();
-          console.log(`[${groupName}] Re-entrando no grupo...`);
+          const connection = getSignalRConnection();          
           await connection.invoke("JoinAuctionGroup", groupName);
-
-          console.log(`[${groupName}] Sincronizando estado...`);
+          
           await connection.invoke("SyncAuctionState", groupName);
-        } catch (err) {
-          console.error(`[${groupName}] Erro ao re-sincronizar:`, err);
+        } catch{          
         }
       })();
     },
@@ -196,8 +187,7 @@ export default function ProductPage() {
 
   const handleReconnecting = useCallback(
     (error?: Error) => {
-      const groupName = String(productId);
-      console.log(`[${groupName}] Tentando reconectar...`, error);
+      const groupName = String(productId);      
     },
     [productId],
   );
@@ -214,14 +204,11 @@ export default function ProductPage() {
 
     const setup = async () => {
       try {
-        if (connection.state === signalR.HubConnectionState.Disconnected) {
-          console.log(`[${groupName}] Iniciando conexão SignalR...`);
-          await connection.start();
-          console.log(`[${groupName}] Conexão estabelecida.`);
+        if (connection.state === signalR.HubConnectionState.Disconnected) {          
+          await connection.start();          
         }
 
-        if (connection.state === signalR.HubConnectionState.Connected) {
-          console.log(`[${groupName}] Entrando no grupo e sincronizando...`);
+        if (connection.state === signalR.HubConnectionState.Connected) {          
           await connection.invoke("JoinAuctionGroup", groupName);
           await connection.invoke("SyncAuctionState", groupName);
         }

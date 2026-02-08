@@ -74,7 +74,7 @@ export function LayoutMain({
                     </div>
                   </NavigationMenuTrigger>
 
-                  <NavigationMenuContent className="absolute left-0 top-full mt-2 w-[85vw] max-w-[240px] !bg-white border border-slate-200 shadow-xl rounded-md z-[60]">
+                  <NavigationMenuContent className="absolute left-0 top-full mt-2 w-[85vw] max-w-[280px] !bg-white border border-slate-200 shadow-xl rounded-md z-[60]">
                     <ul className="grid w-[240px] gap-1 p-2 list-none">
                       <ListItem href={RoutesScreenPaths.AUCTION_REGISTER()} title="Anuncie um produto">
                         Cadastre seu produto para venda agora mesmo.

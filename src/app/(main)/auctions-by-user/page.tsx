@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { auctionApi } from '@/src/api';
 import ButtonCustom from '@/src/components/Button/button';
 import { Badge } from '@/src/components/ui/badge';
@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { RoutesScreenPaths } from '@/src/utils/routesPaths';
 import { useRouter } from 'next/navigation';
 import { AuctionListByUserResponse } from '@/src/models/respose/auctionProductDetail';
+import LoadingSpinner from '@/src/components/Loading/loadingSpinner';
 
 export default function AuctionsUserOwner() {
   const [leiloes, setLeiloes] = useState<AuctionListByUserResponse[]>();
@@ -29,15 +30,17 @@ export default function AuctionsUserOwner() {
     fetchLeiloes();
   }, []);
 
-  if (loading) return <div className="p-8 text-center animate-pulse">Carregando seus leilões...</div>;
+  if (loading) {
+    return <LoadingSpinner />
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       {/* Header Responsivo */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Meus Leilões</h1>
-        <ButtonCustom 
-          className="text-white px-6 py-2 rounded-3xl transition w-full sm:w-auto" 
+        <ButtonCustom
+          className="text-white px-6 py-2 rounded-3xl transition w-full sm:w-auto"
           onClick={() => router.push(RoutesScreenPaths.AUCTION_REGISTER())}
         >
           + Novo Leilão
@@ -53,10 +56,10 @@ export default function AuctionsUserOwner() {
           {leiloes?.map((leilao) => (
             <Link key={leilao.id} href={RoutesScreenPaths.AUCTION_DETAIL(leilao.id)} className="block group">
               <div className="bg-white border rounded-xl p-4 sm:p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between hover:shadow-md transition-shadow gap-6">
-                
+
                 {/* Lado Esquerdo: Imagem + Info */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full flex-1">
-                  
+
                   {/* Container da Imagem Responsiva */}
                   <div className="relative h-48 sm:h-24 w-full sm:w-40 flex-shrink-0 overflow-hidden rounded-lg border bg-gray-100">
                     {leilao.imageUrl ? (
@@ -73,11 +76,11 @@ export default function AuctionsUserOwner() {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Textos e Badges */}
                   <div className="flex flex-col items-start w-full">
                     <h3 className="text-lg sm:text-xl font-semibold text-gray-900 line-clamp-2">{leilao.title}</h3>
-                    
+
                     <div className="flex flex-wrap gap-2 mt-3">
                       <Badge className="bg-gray-100 text-gray-700 border-none text-xs py-1 px-2">
                         Lance: R$ {leilao.currentPrice.toLocaleString('pt-BR')}
@@ -94,12 +97,11 @@ export default function AuctionsUserOwner() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Lado Direito: Status e Ações */}
                 <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-4 w-full sm:w-auto border-t sm:border-none pt-4 sm:pt-0">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                    leilao.status === 'Ativo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                  }`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${leilao.status === 'Ativo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                    }`}>
                     {leilao.status}
                   </span>
                   <ButtonCustom
