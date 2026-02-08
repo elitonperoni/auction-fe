@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { RoutesScreenPaths } from '@/src/utils/routesPaths';
 import { AuctionBidsByUserResponse } from '@/src/models/respose/auctionProductDetail';
 import { Gavel, ImageOff } from 'lucide-react';
+import LoadingSpinner from '@/src/components/Loading/loadingSpinner';
 
 export default function BidByUser() {
     const [auctionBids, setAuctionBids] = useState<AuctionBidsByUserResponse[]>();
@@ -26,10 +27,12 @@ export default function BidByUser() {
         fetchAuctionBidsByUser();
     }, []);
 
-    if (loading) return <div className="p-8 text-center animate-pulse">Carregando seus lances...</div>;
+    if (loading) {
+        return <LoadingSpinner />
+    }
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-6">
+        <div className="max-w-7xl mx-auto p-4 md:p-6">
             <header className="mb-8">
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Meus lances</h1>
                 <p className="text-sm font-medium text-gray-500 mt-1">
@@ -46,7 +49,7 @@ export default function BidByUser() {
                     {auctionBids?.map((leilao) => (
                         <Link key={leilao.id} href={RoutesScreenPaths.AUCTION_DETAIL(leilao.id)} className="block group">
                             <div className="bg-white border rounded-xl p-4 md:p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 hover:shadow-md transition-shadow">
-                                                                
+
                                 <div className="relative h-48 md:h-24 w-full md:w-40 flex-shrink-0 overflow-hidden rounded-lg border bg-gray-100">
                                     {leilao.imageUrl ? (
                                         <img
@@ -60,13 +63,13 @@ export default function BidByUser() {
                                         </div>
                                     )}
                                 </div>
-                                
-                                <div className="flex-1 w-full">                                    
+
+                                <div className="flex-1 w-full">
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                                         <h3 className="text-lg md:text-xl font-semibold text-gray-900 leading-tight">
                                             {leilao.title}
                                         </h3>
-                                        
+
                                         <div className="flex flex-wrap gap-2">
                                             {leilao.isUserActualLeader && !leilao.isUserWinner && (
                                                 <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-700 text-white">
@@ -86,8 +89,8 @@ export default function BidByUser() {
                                             )}
                                         </div>
                                     </div>
-                                    
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">                                                                                
+
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Status Global</span>
                                             <div className="flex flex-wrap gap-2">
@@ -102,13 +105,12 @@ export default function BidByUser() {
                                                 </Badge>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 space-y-2">
                                             <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Minha Atividade</span>
                                             <div className="flex flex-wrap gap-2">
-                                                <Badge className={`py-1 border-none ${
-                                                    leilao.isUserActualLeader ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"
-                                                }`}>
+                                                <Badge className={`py-1 border-none ${leilao.isUserActualLeader ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"
+                                                    }`}>
                                                     Meu Lance: R$ {leilao.userLastBidAmount?.toLocaleString('pt-BR') || "0,00"}
                                                 </Badge>
                                                 <Badge className="bg-white text-gray-600 border-gray-200 py-1">
@@ -117,7 +119,7 @@ export default function BidByUser() {
                                             </div>
                                         </div>
                                     </div>
-                                                                        
+
                                     <p className="text-[11px] text-gray-400 mt-3 md:mt-2 italic">
                                         Encerra em: {new Date(leilao.endDate).toLocaleDateString('pt-BR')}
                                     </p>
