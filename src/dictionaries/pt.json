@@ -1,0 +1,25 @@
+{
+  "common": {
+    "loading": "Carregando...",
+    "save": "Salvar",
+    "cancel": "Cancelar"
+  },
+  "main": {
+    "title" : "Encontre Produtos Incríveis",
+    "subtitle" : "Participe de leilões emocionantes e compre os melhores itens."
+  },
+  "auction": {
+    "title": "Sala de Leilão",
+    "place_bid": "Fazer Lance",
+    "update_auction": "Editar leilão",
+    "save_auction": "Cadastrar leilão",
+    "current_bid": "Lance Atual",
+    "bid_success": "Seu lance foi registrado com sucesso!",
+    "bid_error": "Erro ao processar lance."
+  },
+  "product": {
+    "edit_title": "Editando Produto",
+    "create_title": "Cadastrando Novo Produto",
+    "name_label": "Nome do Item"
+  }
+}

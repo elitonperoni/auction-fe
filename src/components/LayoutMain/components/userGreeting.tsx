@@ -8,16 +8,7 @@ import {
 } from "../../ui/tooltip";
 import { LogIn, LogOut } from "lucide-react";
 import { Button } from "../../ui/button";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "../../ui/navigation-menu";
-import Link from "next/link";
+import LanguageSwitcher from "../../LanguageSwitcher/languageSwitcher";
 
 interface UserGreeting {
   readonly isAuthenticated: boolean;
@@ -42,6 +33,7 @@ export default function UserGreeting({
 
   return (
     <div className="flex items-center gap-4">
+      <LanguageSwitcher/>
       <div className="text-primary-foreground font-medium">
         {isAuthenticated ? `Olá ${username}!` : "Convidado"}
       </div>
@@ -58,7 +50,7 @@ export default function UserGreeting({
           </TooltipTrigger>
           <TooltipContent>
             <p>{isAuthenticated ? "Encerrar sessão" : "Fazer login"}</p>
-          </TooltipContent>
+          </TooltipContent>          
         </Tooltip>
       </TooltipProvider>     
     </div>
