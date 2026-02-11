@@ -52,7 +52,7 @@ export default function CreateAuctionForm() {
       .string()
       .min(20, "Descreva melhor o produto (mín. 20 caracteres)"),
     initialValue: z
-      .number()
+      .string()
       .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
         message: "O valor inicial deve ser maior que zero",
       }),
@@ -66,7 +66,7 @@ export default function CreateAuctionForm() {
     defaultValues: {
       title: "",
       description: "",
-      initialValue: 0,
+      initialValue: "",
     },
   });
 
@@ -82,7 +82,7 @@ export default function CreateAuctionForm() {
       .then((resp) => {
         form.setValue("title", resp.title)
         form.setValue("description", resp.description)
-        form.setValue("initialValue", resp.initialValue)
+        form.setValue("initialValue", Number(resp.initialValue).toString())
         form.setValue("endDate", new Date(resp.endDate))
         if (resp.photos) {
           setOriginalPhotos(resp.photos);
