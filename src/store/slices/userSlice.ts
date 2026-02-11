@@ -20,11 +20,11 @@ export const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<{ id: string; name: string; expiresAt: number}>) => {
+    setUser: (state, action: PayloadAction<{ id: string; name: string; expiresAt: number, isAuthenticated: boolean}>) => {
       state.id = action.payload.id;
       state.name = action.payload.name;
       state.expiresAt = action.payload.expiresAt;
-      state.isAuthenticated = true;
+      state.isAuthenticated = action.payload.isAuthenticated;
     },
     updateName: (state, action: PayloadAction<string>) => {
       state.name = action.payload;
