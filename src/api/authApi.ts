@@ -53,10 +53,7 @@ export class AuthApi {
        const expirationTime = Date.now() + (timeToExpireToken);
 
         store.dispatch(
-            updateExpiration(expirationTime),);
-            
-      ToastInfo("Token renovado!");
-
+            updateExpiration(expirationTime),);                  
     } catch {
       this.logout();
     }
@@ -67,8 +64,7 @@ export class AuthApi {
   const user = state.user; 
 
   const now = Date.now();
-  const buffer = 30 * 1000; 
-  debugger
+  const buffer = 30 * 1000;   
 
   if (user.expiresAt && (now + buffer) > user.expiresAt) {
     try {

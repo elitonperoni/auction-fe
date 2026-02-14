@@ -57,6 +57,7 @@ export default function ProductPage() {
   const [bidSuccess, setBidSuccess] = useState(false);
   const [product, setProduct] = useState<AuctionProductDetail>();
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isCurrentUserAuctionOwner, setIsCurrentUserAuctionOwner] = useState(false);
   const [isLoadingScreen, setIsLoadingScreen] = useState(false);
   const [isLoadingBid, setIsLoadingBid] = useState(false);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
@@ -76,7 +77,7 @@ export default function ProductPage() {
       newBidderName: string,
       newBidTime: string,
       errorMessage?: string,
-    ) => {      
+    ) => {
       if (receivedProductId === productId) {
         setProduct((prevProduct) => {
           if (!prevProduct) return undefined;
@@ -92,7 +93,7 @@ export default function ProductPage() {
             amount: newBidAmount,
             date: new Date(newBidTime),
           };
-          showNotifyBid(newBidderId == user.id, newBidderName, newBidAmount);
+          showNotifyBid(newBidderId == user.id, isCurrentUserAuctionOwner, newBidderName, newBidAmount);
           setIsLoadingBid(false);
 
           return {
@@ -155,6 +156,7 @@ export default function ProductPage() {
       .getDetail(id)
       .then((data) => {
         setProduct(data);
+        setIsCurrentUserAuctionOwner(data.isOwner);
         setIsLoadingScreen(false);
       })
       .catch((error) => {
@@ -195,7 +197,7 @@ export default function ProductPage() {
     [productId],
   );
 
-  useEffect(() => {    
+  useEffect(() => {
     const groupName = String(productId);
 
     const connection = getSignalRConnection();
@@ -662,21 +664,30 @@ export default function ProductPage() {
 
   function showNotifyBid(
     isBidOwner: boolean,
+    isAuctionOwner: boolean,
     newBidderName: string,
     newBidAmount: number,
-  ) {
+  ) {    
     if (isBidOwner) {
-      ToastSuccess(`Lance processado com sucesso!`);
-      setBidSuccess(true);
-      setTimeout(() => setBidSuccess(false), 3000);
-      return;
+      ToastSuccess(`Lance processado com sucesso!`);      
     }
-
-    ToastSuccess(
-      `Lance superado por ${newBidderName} R$ ${newBidAmount.toLocaleString(
-        "pt-BR",
-        { style: "currency", currency: "BRL" },
-      )}`,
-    );
+    else if (isAuctionOwner) {
+      ToastSuccess(
+        `Novo lance recebido neste item de ${newBidderName} R$ ${newBidAmount.toLocaleString(
+          "pt-BR",
+          { style: "currency", currency: "BRL" },
+        )}`,
+      );      
+    }
+    else {
+      ToastInfo(
+        `Lance superado por ${newBidderName} R$ ${newBidAmount.toLocaleString(
+          "pt-BR",
+          { style: "currency", currency: "BRL" },
+        )}`,
+      );
+    }
+    setBidSuccess(true);
+    setTimeout(() => setBidSuccess(false), 3000);
   }
 }
