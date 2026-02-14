@@ -7,7 +7,7 @@ interface UserState {
   email: string | null;
   isAuthenticated: boolean;
   expiresAt: number | null;
-  dict: Dictionary | null; // <--- Novo campo
+  dict: Dictionary | null;
 }
 
 const initialState: UserState = {
@@ -23,11 +23,11 @@ export const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<{ id: string; name: string; expiresAt: number }>) => {
+    setUser: (state, action: PayloadAction<{ id: string; name: string; expiresAt: number, isAuthenticated: boolean}>) => {
       state.id = action.payload.id;
       state.name = action.payload.name;
       state.expiresAt = action.payload.expiresAt;
-      state.isAuthenticated = true;
+      state.isAuthenticated = action.payload.isAuthenticated;
     },
     setDictionary: (state, action: PayloadAction<Dictionary>) => {
       state.dict = action.payload;

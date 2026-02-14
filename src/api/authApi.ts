@@ -22,7 +22,8 @@ export class AuthApi {
             setUser({
               id: response.id,
               name: response.name,
-              expiresAt: expirationTime
+              expiresAt: expirationTime,
+              isAuthenticated: true
             }),
           );
 
@@ -123,7 +124,7 @@ export class AuthApi {
 
   async logout(): Promise<void> {
     await this.sendLogout();
-    store.dispatch(setUser({ id: "", name: "", expiresAt: 0 }));
+    store.dispatch(setUser({ id: "", name: "", expiresAt: 0, isAuthenticated: false }));
     window.location.href = "/login";
   }
 }

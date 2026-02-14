@@ -166,8 +166,7 @@ export default function Home() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="all">Todas as categorias</SelectItem>
-                          <SelectItem value="veiculos">Veículos</SelectItem>
-                          <SelectItem value="eletronicos">Eletrônicos</SelectItem>
+                          <SelectItem value="veiculos">Veículos</SelectItem>                          
                         </SelectContent>
                       </Select>
                     </FormItem>
