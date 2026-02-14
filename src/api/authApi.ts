@@ -8,13 +8,14 @@ import { RecoveryPasswordRequest } from "../models/request/recoveryPasswordReque
 import { ResetPasswordRequest } from "../models/request/resetPasswordRequest";
 
 const baseRoute: string = "users";
-export class AuthApi {
+const timeToExpireToken = (1 * 60 * 1000);
+export class AuthApi { 
   async login(request: LoginRequest): Promise<boolean> {
     try {
       await api.post(`${baseRoute}/login`, request).then((resp) => {
         const response = resp.data;
 
-        const expirationTime = Date.now() + (15 * 60 * 1000);
+        const expirationTime = Date.now() + (timeToExpireToken);
 
         if (response) {
           store.dispatch(
@@ -48,7 +49,7 @@ export class AuthApi {
         },
       );
 
-       const expirationTime = Date.now() + (15 * 60 * 1000);
+       const expirationTime = Date.now() + (timeToExpireToken);
 
         store.dispatch(
             updateExpiration(expirationTime),);
@@ -69,7 +70,7 @@ export class AuthApi {
     try {
       this.refreshToken()
       
-      const newExpiration = Date.now() + (15 * 60 * 1000); 
+      const newExpiration = Date.now() + (timeToExpireToken); 
 
       store.dispatch(updateExpiration(newExpiration));
             

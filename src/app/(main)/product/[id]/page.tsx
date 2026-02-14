@@ -192,6 +192,8 @@ export default function ProductPage() {
     [productId],
   );
 
+  
+
   useEffect(() => {    
     authApi.ensureValidToken();
     const groupName = String(productId);
