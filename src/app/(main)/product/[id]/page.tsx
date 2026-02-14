@@ -57,7 +57,6 @@ export default function ProductPage() {
   const [bidSuccess, setBidSuccess] = useState(false);
   const [product, setProduct] = useState<AuctionProductDetail>();
   const [isFavorite, setIsFavorite] = useState(false);
-  const [isCurrentUserAuctionOwner, setIsCurrentUserAuctionOwner] = useState(false);
   const [isLoadingScreen, setIsLoadingScreen] = useState(false);
   const [isLoadingBid, setIsLoadingBid] = useState(false);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
@@ -92,8 +91,8 @@ export default function ProductPage() {
             bidderName: newBidderName,
             amount: newBidAmount,
             date: new Date(newBidTime),
-          };
-          showNotifyBid(newBidderId == user.id, isCurrentUserAuctionOwner, newBidderName, newBidAmount);
+          };          
+          showNotifyBid(newBidderId == user.id, !!product?.isOwner, newBidderName, newBidAmount);
           setIsLoadingBid(false);
 
           return {
@@ -106,7 +105,7 @@ export default function ProductPage() {
         });
       }
     },
-    [productId],
+    [productId, product?.isOwner],
   );
 
   useEffect(() => {
@@ -668,6 +667,7 @@ export default function ProductPage() {
     newBidderName: string,
     newBidAmount: number,
   ) {
+    debugger
     if (isBidOwner) {
       ToastSuccess(`Lance processado com sucesso!`);
     }
