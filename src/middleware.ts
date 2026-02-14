@@ -20,7 +20,7 @@ export function middleware(request: NextRequest) {
     if (path === "/") {
       return pathname === "/";
     }
-    return pathname.startsWith(path);
+    return pathname === path;
   });
 
   if (isPublicPath) {

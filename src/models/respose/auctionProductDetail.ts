@@ -8,6 +8,7 @@ export interface AuctionProductDetail {
   category: string;
   description: string;
   seller: string;
+  isOwner: boolean;
   condition: string;
   location: string;
   startDate: Date;

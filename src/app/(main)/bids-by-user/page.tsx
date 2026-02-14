@@ -120,7 +120,7 @@ export default function BidByUser() {
                                         </div>
                                     </div>
 
-                                    <p className="text-[11px] text-gray-400 mt-3 md:mt-2 italic">
+                                    <p className="text-[16px] text-gray-800 mt-3 md:mt-2 italic">
                                         Encerra em: {new Date(leilao.endDate).toLocaleDateString('pt-BR')}
                                     </p>
                                 </div>
