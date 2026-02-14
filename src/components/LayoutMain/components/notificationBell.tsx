@@ -103,7 +103,7 @@ export function NotificationBell() {
                         onClick={() => setIsOpen(false)}
                     />
 
-                    <div className="absolute -right-16 sm:right-0 mt-2 w-[90vw] max-w-[320px] sm:max-w-none sm:w-80 bg-white dark:bg-zinc-900 rounded-lg shadow-xl border border-zinc-200 dark:border-zinc-800 z-20 overflow-hidden">
+                    <div className="absolute -right-20 sm:right-0 mt-2 w-[75vw] max-w-[320px] sm:max-w-none sm:w-80 bg-white dark:bg-zinc-900 rounded-lg shadow-xl border border-zinc-200 dark:border-zinc-800 z-20 overflow-hidden">
                         <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 font-bold text-zinc-700 dark:text-zinc-200">
                             Notificações
                         </div>
