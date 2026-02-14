@@ -3,7 +3,6 @@ import { LoginRequest } from "../models/request/authRequest";
 import api from "./api";
 import { store } from "../store/store";
 import { setUser, updateExpiration } from "../store/slices/userSlice";
-import ToastSuccess from "../components/Toast/toastNotificationSuccess";
 import { RegisterRequest } from "../models/request/registerRequest";
 import { RecoveryPasswordRequest } from "../models/request/recoveryPasswordRequest";
 import { ResetPasswordRequest } from "../models/request/resetPasswordRequest";
@@ -89,11 +88,9 @@ export class AuthApi {
       const resp = await api.post(`${baseRoute}/recovery-password`, request);
       const response = resp.data;
 
-      if (response) {
-        ToastSuccess("Email de recuperação enviado com sucesso.");
+      if (response) {        
         return true;
-      } else {
-        ToastError("Falha ao realizar login");
+      } else {        
         return false;
       }
     } catch {
@@ -106,11 +103,9 @@ export class AuthApi {
       const resp = await api.post(`${baseRoute}/reset-password`, request);
       const response = resp.data;
 
-      if (response) {
-        ToastSuccess("Senha alterada com sucesso.");
+      if (response) {        
         return true;
-      } else {
-        ToastError("Falha ao realizar login");
+      } else {        
         return false;
       }
     } catch {
