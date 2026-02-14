@@ -32,6 +32,8 @@ import { useParams, useRouter } from "next/navigation";
 import ButtonCustom from "@/src/components/Button/button";
 import { RoutesScreenPaths } from "@/src/utils/routesPaths";
 import LoadingSpinner from "@/src/components/Loading/loadingSpinner";
+import { useSelector } from "react-redux";
+import { RootState } from "@/src/store/store";
 
 
 export default function CreateAuctionForm() {
@@ -41,10 +43,10 @@ export default function CreateAuctionForm() {
   const [previews, setPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
-
   const params = useParams();
   const auctionId = params?.id;
   const isEditing = !!auctionId;
+  const { dict } = useSelector((state: RootState) => state.user);
 
   const formSchema = z.object({
     title: z.string().min(5, "O título deve ter pelo menos 5 caracteres"),
@@ -151,7 +153,7 @@ export default function CreateAuctionForm() {
     <main className="max-w-3xl mx-auto py-10 px-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">{isEditing ? "Editar leilão" : "Criar leilão"}</CardTitle>
+          <CardTitle className="text-2xl">{isEditing ? dict!.auction.update_auction: dict!.auction.save_auction}</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>

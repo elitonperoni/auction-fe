@@ -16,7 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SearchAuctionListRequest } from "@/src/models/request/searchAuctionListRequest";
 import ButtonCustom from "@/src/components/Button/button";
 import { Button } from "@/src/components/ui/button";
-import { useParams } from "next/navigation";
+import { useSelector } from "react-redux";
+import { RootState } from "@/src/store/store";
 
 const formSchema = z.object({
   searchTerm: z.string().optional(),
@@ -31,6 +32,7 @@ export default function Home() {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState<boolean>(false);
   const hasMore = page < totalPages;
+  const { dict } = useSelector((state: RootState) => state.user);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -109,9 +111,9 @@ export default function Home() {
     <main className="min-h-screen bg-background">
       <section className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">Encontre Produtos Incríveis</h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-4"> {dict!.main.title}</h2>
           <p className="text-primary-foreground/90 text-lg max-w-2xl">
-            Participe de leilões emocionantes e compre os melhores itens.
+            {dict!.main.subtitle}
           </p>
         </div>
       </section>

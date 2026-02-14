@@ -192,7 +192,8 @@ export default function ProductPage() {
     [productId],
   );
 
-  useEffect(() => {
+  useEffect(() => {    
+    authApi.ensureValidToken();
     const groupName = String(productId);
     const connection = getSignalRConnection();
 
@@ -203,7 +204,7 @@ export default function ProductPage() {
     connection.onreconnecting(handleReconnecting);
 
     const setup = async () => {
-      try {
+      try {        
         if (connection.state === signalR.HubConnectionState.Disconnected) {          
           await connection.start();          
         }

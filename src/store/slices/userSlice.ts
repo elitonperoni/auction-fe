@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { Dictionary } from '@/lib/get-dictionary'; 
 
 interface UserState {
   id: string | null;
@@ -6,6 +7,7 @@ interface UserState {
   email: string | null;
   isAuthenticated: boolean;
   expiresAt: number | null;
+  dict: Dictionary | null;
 }
 
 const initialState: UserState = {
@@ -13,7 +15,8 @@ const initialState: UserState = {
   name: null,
   email: null,
   isAuthenticated: false,
-  expiresAt: null
+  expiresAt: null,
+  dict: null 
 };
 
 export const userSlice = createSlice({
@@ -25,6 +28,9 @@ export const userSlice = createSlice({
       state.name = action.payload.name;
       state.expiresAt = action.payload.expiresAt;
       state.isAuthenticated = action.payload.isAuthenticated;
+    },
+    setDictionary: (state, action: PayloadAction<Dictionary>) => {
+      state.dict = action.payload;
     },
     updateName: (state, action: PayloadAction<string>) => {
       state.name = action.payload;
@@ -42,5 +48,5 @@ export const userSlice = createSlice({
   },
 });
 
-export const { setUser, updateName, logout, updateExpiration } = userSlice.actions;
+export const { setUser, updateName, logout, updateExpiration, setDictionary } = userSlice.actions;
 export default userSlice.reducer;
