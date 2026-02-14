@@ -667,9 +667,9 @@ export default function ProductPage() {
     isAuctionOwner: boolean,
     newBidderName: string,
     newBidAmount: number,
-  ) {    
+  ) {
     if (isBidOwner) {
-      ToastSuccess(`Lance processado com sucesso!`);      
+      ToastSuccess(`Lance processado com sucesso!`);
     }
     else if (isAuctionOwner) {
       ToastSuccess(
@@ -677,7 +677,7 @@ export default function ProductPage() {
           "pt-BR",
           { style: "currency", currency: "BRL" },
         )}`,
-      );      
+      );
     }
     else {
       ToastInfo(
