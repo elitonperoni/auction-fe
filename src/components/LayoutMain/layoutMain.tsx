@@ -109,7 +109,7 @@ export function LayoutMain({
               </button>
             </NavigationMenu>
 
-            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+            <div className="flex items-center gap-3 sm:gap-4 shrink-0 min-w-0">
               {user.isAuthenticated && <NotificationBell />}
               <div className="text-primary-foreground font-medium text-sm sm:text-base">
                 <UserGreeting

@@ -35,10 +35,11 @@ export function NotificationBell() {
 
     const handleNotification = useCallback((auctionId: string, message: string) => {
         const newNotification: NotificationItem = {
-            id: auctionId,
+            id: crypto.randomUUID(),
             message,
             createdAt: new Date(),
-            isRead: false
+            isRead: false,
+            auctionId: auctionId
         };
 
         setNotifications(prev => [newNotification, ...prev]);
@@ -102,7 +103,7 @@ export function NotificationBell() {
                         onClick={() => setIsOpen(false)}
                     />
 
-                    <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-zinc-900 rounded-lg shadow-xl border border-zinc-200 dark:border-zinc-800 z-20 overflow-hidden">
+                    <div className="absolute -right-16 sm:right-0 mt-2 w-[90vw] max-w-[320px] sm:max-w-none sm:w-80 bg-white dark:bg-zinc-900 rounded-lg shadow-xl border border-zinc-200 dark:border-zinc-800 z-20 overflow-hidden">
                         <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 font-bold text-zinc-700 dark:text-zinc-200">
                             Notificações
                         </div>
@@ -115,7 +116,7 @@ export function NotificationBell() {
                                         key={`${mp.id}-${index}`}
                                         className="p-4 border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer flex flex-col gap-1"
                                         onClick={() => {
-                                            router.push(RoutesScreenPaths.AUCTION_DETAIL(mp.id));
+                                            router.push(RoutesScreenPaths.AUCTION_DETAIL(mp.auctionId!));
                                             setHasUnread(false);
                                             setIsOpen(false);
                                         }}
@@ -136,9 +137,10 @@ export function NotificationBell() {
                             )}
                         </div>
 
-                        <button className="w-full py-2 text-xs text-center text-blue-500 hover:underline bg-zinc-50 dark:bg-zinc-800/30">
+                        {/*TODO add feature soon
+                        {/* <button className="w-full py-2 text-xs text-center text-blue-500 hover:underline bg-zinc-50 dark:bg-zinc-800/30">
                             Ver todas as notificações
-                        </button>
+                        </button> */}
                     </div>
                 </>
             )}
