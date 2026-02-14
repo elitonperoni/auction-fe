@@ -14,7 +14,6 @@ import getTimeAgo from "@/src/utils/getTimeAgo";
 
 export function NotificationBell() {
     const [isOpen, setIsOpen] = useState(false);
-    const [hasNotifications, setHasNotifications] = useState(false);
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [hasUnread, setHasUnread] = useState(false);
     const user = useSelector((state: RootState) => state.user);
@@ -23,14 +22,13 @@ export function NotificationBell() {
     const userGroupName = String(user.id);
 
     useEffect(() => {
-        debugger
+
         getNotifications();
     }, [])
 
     async function getNotifications() {
         await userApi.getNotifications()
             .then((resp) => {
-                debugger
                 setNotifications(resp)
             })
     }
@@ -77,7 +75,7 @@ export function NotificationBell() {
         };
     }, [user.id,
         handleNotification,
-    ]);    
+    ]);
 
     return (
         <div className="relative">
@@ -112,9 +110,9 @@ export function NotificationBell() {
                         {/* Corrigido para max-h */}
                         <div className="max-h-[300px] overflow-y-auto">
                             {notifications && notifications.length > 0 ? (
-                                notifications.map((mp) => (
+                                notifications.map((mp, index) => (
                                     <div
-                                        key={mp.id} 
+                                        key={`${mp.id}-${index}`}
                                         className="p-4 border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer flex flex-col gap-1"
                                         onClick={() => {
                                             router.push(RoutesScreenPaths.AUCTION_DETAIL(mp.id));
@@ -125,13 +123,13 @@ export function NotificationBell() {
                                         <span className="text-sm text-zinc-700 dark:text-zinc-300">
                                             <strong>{mp.message}</strong>
                                         </span>
-                                        
+
                                         <span className="text-xs text-zinc-400 dark:text-zinc-500">
                                             {getTimeAgo(mp.createdAt)}
                                         </span>
                                     </div>
                                 ))
-                            ) : (                                
+                            ) : (
                                 <div className="p-6 text-center text-sm text-zinc-500">
                                     Você não tem novas notificações.
                                 </div>
