@@ -72,7 +72,7 @@ export class AuthApi {
       
       const newExpiration = Date.now() + (15 * 60 * 1000); 
 
-      store.dispatch(updateExpiration(newExpiration));
+      store.dispatch(updateExpiration(newExpiration));    
             
     } catch {
       this.logout()
