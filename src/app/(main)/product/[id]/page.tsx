@@ -192,9 +192,15 @@ export default function ProductPage() {
     [productId],
   );
 
+  const ensureValidToken = async () => {
+    await authApi.ensureValidToken();
+  }
+
   useEffect(() => {    
-    authApi.ensureValidToken();
     const groupName = String(productId);
+
+    ensureValidToken();
+
     const connection = getSignalRConnection();
 
     connection.on(ChannelNames.ReceiveNewBid, handleNewBid);
