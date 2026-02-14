@@ -111,40 +111,43 @@ export default function ProductPage() {
   useEffect(() => {
     if (!product?.endDate) return;
 
-    const calculateTimeLeft = () => {
-      const now = new Date().getTime();
-      const target = new Date(product.endDate).getTime();
-      const difference = target - now;
-
-      if (difference <= 0) {
-        setTimeLeft("Leilão Encerrado");
-        return;
-      }
-
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor(
-        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
-      );
-      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-      const pad = (num: number) => num.toString().padStart(2, "0");
-
-      if (days > 0) {
-        setTimeLeft(
-          `${pad(days)}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`,
-        );
-      } else {
-        setTimeLeft(`${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`);
-      }
-    };
-
     calculateTimeLeft();
 
     const timer = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(timer);
   }, [product?.endDate]);
+
+  const calculateTimeLeft = () => {
+    if (!product)
+      return 0;
+
+    const now = new Date().getTime();
+    const target = new Date(product.endDate).getTime();
+    const difference = target - now;
+
+    if (difference <= 0) {
+      setTimeLeft("Leilão Encerrado");
+      return;
+    }
+
+    const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+    const hours = Math.floor(
+      (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+    );
+    const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+    const pad = (num: number) => num.toString().padStart(2, "0");
+
+    if (days > 0) {
+      setTimeLeft(
+        `${pad(days)}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`,
+      );
+    } else {
+      setTimeLeft(`${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`);
+    }
+  };
 
   async function fetchProductDetails(id: string) {
     setIsLoadingScreen(true);
@@ -174,11 +177,11 @@ export default function ProductPage() {
 
       (async () => {
         try {
-          const connection = getSignalRConnection();          
+          const connection = getSignalRConnection();
           await connection.invoke("JoinAuctionGroup", groupName);
-          
+
           await connection.invoke("SyncAuctionState", groupName);
-        } catch{          
+        } catch {
         }
       })();
     },
@@ -187,7 +190,7 @@ export default function ProductPage() {
 
   const handleReconnecting = useCallback(
     (error?: Error) => {
-      const groupName = String(productId);      
+      const groupName = String(productId);
     },
     [productId],
   );
@@ -196,7 +199,7 @@ export default function ProductPage() {
     await authApi.ensureValidToken();
   }
 
-  useEffect(() => {    
+  useEffect(() => {
     const groupName = String(productId);
 
     ensureValidToken();
@@ -210,12 +213,12 @@ export default function ProductPage() {
     connection.onreconnecting(handleReconnecting);
 
     const setup = async () => {
-      try {        
-        if (connection.state === signalR.HubConnectionState.Disconnected) {          
-          await connection.start();          
+      try {
+        if (connection.state === signalR.HubConnectionState.Disconnected) {
+          await connection.start();
         }
 
-        if (connection.state === signalR.HubConnectionState.Connected) {          
+        if (connection.state === signalR.HubConnectionState.Connected) {
           await connection.invoke("JoinAuctionGroup", groupName);
           await connection.invoke("SyncAuctionState", groupName);
         }
@@ -224,7 +227,7 @@ export default function ProductPage() {
       }
     };
 
-    setup(); 
+    setup();
 
     return () => {
       connection.off(ChannelNames.ReceiveNewBid, handleNewBid);
@@ -249,7 +252,7 @@ export default function ProductPage() {
   ]);
 
   const handlePlaceBid = async (bidAmount: number) => {
-    await authApi.ensureValidToken()
+    ensureValidToken();
 
     const groupName = String(productId);
     const connection = getSignalRConnection();
@@ -257,10 +260,7 @@ export default function ProductPage() {
     const invokeSendBid = () =>
       connection.invoke(ChannelNames.SendBid, groupName, bidAmount.toString());
 
-    if (
-      connection &&
-      connection.state === signalR.HubConnectionState.Connected
-    ) {
+    if (connection?.state === signalR.HubConnectionState.Connected) {
       setBidSuccess(false);
       setIsLoadingBid(true);
 
