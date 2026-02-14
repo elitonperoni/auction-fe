@@ -42,6 +42,7 @@ export default function CreateAuctionForm() {
   const [newImages, setNewImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [loadingSave, setLoadingSave] = useState<boolean>(false);
   const router = useRouter();
   const params = useParams();
   const auctionId = params?.id;
@@ -114,7 +115,7 @@ export default function CreateAuctionForm() {
   };
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    setLoading(true);
+    setLoadingSave(true);
     const formData = new FormData();
 
     if (isEditing)
@@ -132,15 +133,14 @@ export default function CreateAuctionForm() {
     }
 
     imagesToRemove.forEach(url => formData.append("ImagesToRemove", url));
-
-    setLoading(true);
+    
     auctionApi.create(formData).then((response) => {
       if (isEditing)
         ToastSuccess("Leilão editado com sucesso!");
       else
         ToastSuccess("Leilão criado com sucesso!");
 
-      setLoading(false);
+      setLoadingSave(false);
       router.push(RoutesScreenPaths.AUCTION_DETAIL(response));
     });
   }
@@ -307,7 +307,7 @@ export default function CreateAuctionForm() {
               </div>
 
               <ButtonCustom
-                isLoading={loading}
+                isLoading={loadingSave}
                 className="w-full mt-4"
                 isSubmit
               >

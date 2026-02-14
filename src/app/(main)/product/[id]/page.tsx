@@ -26,7 +26,7 @@ import {
   TabsTrigger,
 } from "@/src/components/ui/tabs";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
-import { getSignalRConnection } from "@/src/api/hub";
+import { getSignalRConnection, startSignalRConnection } from "@/src/api/hub";
 import BidForm from "@/src/components/bid-form";
 import {
   AuctionProductDetail,
@@ -76,7 +76,7 @@ export default function ProductPage() {
       newBidderName: string,
       newBidTime: string,
       errorMessage?: string,
-    ) => {
+    ) => {      
       if (receivedProductId === productId) {
         setProduct((prevProduct) => {
           if (!prevProduct) return undefined;
@@ -195,14 +195,8 @@ export default function ProductPage() {
     [productId],
   );
 
-  const ensureValidToken = async () => {
-    await authApi.ensureValidToken();
-  }
-
-  useEffect(() => {
+  useEffect(() => {    
     const groupName = String(productId);
-
-    ensureValidToken();
 
     const connection = getSignalRConnection();
 
@@ -214,14 +208,10 @@ export default function ProductPage() {
 
     const setup = async () => {
       try {
-        if (connection.state === signalR.HubConnectionState.Disconnected) {
-          await connection.start();
-        }
+        await startSignalRConnection();
 
-        if (connection.state === signalR.HubConnectionState.Connected) {
-          await connection.invoke("JoinAuctionGroup", groupName);
-          await connection.invoke("SyncAuctionState", groupName);
-        }
+        await connection.invoke("JoinAuctionGroup", groupName);
+        await connection.invoke("SyncAuctionState", groupName);
       } catch (err) {
         console.error(`[${groupName}] Erro ao configurar SignalR:`, err);
       }
@@ -252,8 +242,6 @@ export default function ProductPage() {
   ]);
 
   const handlePlaceBid = async (bidAmount: number) => {
-    ensureValidToken();
-
     const groupName = String(productId);
     const connection = getSignalRConnection();
 
@@ -602,7 +590,7 @@ export default function ProductPage() {
               <div className="lg:col-span-1">
                 <Card className="p-6 bg-card border-border sticky top-24">
                   {/* Current Bid */}
-                  <div className="mb-6 pb-6 border-b border-border">
+                  <div className="pb-6 border-b border-border">
                     <p className="text-sm text-muted-foreground tracking-wide mb-2">
                       {product?.bidHistory[0]?.bidderName && "Lance Atual"}
                       {!product?.bidHistory[0]?.bidderName && "Faça um lance agora mesmo!"}
@@ -614,40 +602,55 @@ export default function ProductPage() {
                       Usuário com maior lance: @{product?.bidHistory[0]?.bidderName}
                     </p>)}
                   </div>
-                  {/* Bid Form */}
-                  <BidForm
-                    currentBid={product.currentBid}
-                    minBid={product.minBid}
-                    successBid={bidSuccess}
-                    isLoading={isLoadingBid}
-                    onPlaceBid={handlePlaceBid}
-                  />
-                  {/* Action Buttons e Info Box */}
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      onClick={() => setIsFavorite(!isFavorite)}
-                      variant={isFavorite ? "default" : "outline"}
-                      className="flex-1"
-                    >
-                      <Heart
-                        className={`w-5 h-5 ${isFavorite ? "fill-current" : ""
-                          }`}
+
+                  {product.isOwner &&
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Este leilão percente a você!
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Acompanhe os lances recebidos abaixo na aba Histórico de Lances
+                      </p>
+                    </>
+                  }
+
+                  {!product.isOwner && (
+                    <>
+                      <BidForm
+                        currentBid={product.currentBid}
+                        minBid={product.minBid}
+                        successBid={bidSuccess}
+                        isLoading={isLoadingBid}
+                        onPlaceBid={handlePlaceBid}
                       />
-                      Favoritar
-                    </Button>
-                    <Button onClick={handleShare} variant="outline" className="flex-1 bg-transparent">
-                      <Share2 className="w-5 h-5" />
-                      Compartilhar
-                    </Button>
-                  </div>
-                  <Alert className="mt-6 bg-muted border-border">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
-                    <AlertDescription className="text-foreground">
-                      ✓ Pagamento seguro garantido
-                      <br />✓ Autenticidade verificada
-                      <br />✓ Frete incluído na venda
-                    </AlertDescription>
-                  </Alert>
+
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          onClick={() => setIsFavorite(!isFavorite)}
+                          variant={isFavorite ? "default" : "outline"}
+                          className="flex-1"
+                        >
+                          <Heart
+                            className={`w-5 h-5 ${isFavorite ? "fill-current" : ""
+                              }`}
+                          />
+                          Favoritar
+                        </Button>
+                        <Button onClick={handleShare} variant="outline" className="flex-1 bg-transparent">
+                          <Share2 className="w-5 h-5" />
+                          Compartilhar
+                        </Button>
+                      </div>
+                      <Alert className="mt-6 bg-muted border-border">
+                        <CheckCircle2 className="h-4 w-4 text-primary" />
+                        <AlertDescription className="text-foreground">
+                          ✓ Pagamento seguro garantido
+                          <br />✓ Autenticidade verificada
+                          <br />✓ Frete incluído na venda
+                        </AlertDescription>
+                      </Alert>
+                    </>
+                  )}
                 </Card>
               </div>
             </div>

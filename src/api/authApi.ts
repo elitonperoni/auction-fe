@@ -6,6 +6,7 @@ import { setUser, updateExpiration } from "../store/slices/userSlice";
 import { RegisterRequest } from "../models/request/registerRequest";
 import { RecoveryPasswordRequest } from "../models/request/recoveryPasswordRequest";
 import { ResetPasswordRequest } from "../models/request/resetPasswordRequest";
+import ToastInfo from "../components/Toast/toastNotificationInfo";
 
 const baseRoute: string = "users";
 const timeToExpireToken = (1 * 60 * 1000);
@@ -53,6 +54,8 @@ export class AuthApi {
 
         store.dispatch(
             updateExpiration(expirationTime),);
+            
+      ToastInfo("Token renovado!");
 
     } catch {
       this.logout();
@@ -65,6 +68,7 @@ export class AuthApi {
 
   const now = Date.now();
   const buffer = 30 * 1000; 
+  debugger
 
   if (user.expiresAt && (now + buffer) > user.expiresAt) {
     try {

@@ -17,6 +17,7 @@ import {
 } from "../ui/navigation-menu";
 import React from "react";
 import { RoutesScreenPaths } from "@/src/utils/routesPaths";
+import { NotificationBell } from "./components/notificationBell";
 
 export function LayoutMain({
   children,
@@ -109,6 +110,7 @@ export function LayoutMain({
             </NavigationMenu>
 
             <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+              {user.isAuthenticated && <NotificationBell />}
               <div className="text-primary-foreground font-medium text-sm sm:text-base">
                 <UserGreeting
                   isAuthenticated={user.isAuthenticated}
