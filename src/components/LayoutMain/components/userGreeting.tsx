@@ -33,7 +33,7 @@ export default function UserGreeting({
 
   return (
     <div className="flex items-center gap-4">
-      <LanguageSwitcher/>
+      {/* <LanguageSwitcher/> */} 
       <div className="text-primary-foreground font-medium">
         {isAuthenticated ? `Olá ${username}!` : "Convidado"}
       </div>
