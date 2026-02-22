@@ -201,31 +201,7 @@ export default function CreateAuctionForm() {
                 )}
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Campo 2: Categoria */}
-                <FormField
-                  control={form.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Categoria</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a categoria..." /> {/* Texto ajustado */}
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="veiculo">Veículos</SelectItem> {/* Values ajustados */}
-                          <SelectItem value="eletronicos">Eletrônicos</SelectItem>
-                          <SelectItem value="informatica">Informática</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">               
                 {/* Campo 1: Condição */}
                 <FormField
                   control={form.control}
@@ -276,6 +252,31 @@ export default function CreateAuctionForm() {
                     </FormItem>
                   )}
                 />
+
+                 {/* Campo 2: Categoria */}
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoria</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a categoria..." /> {/* Texto ajustado */}
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="veiculo">Veículos</SelectItem> {/* Values ajustados */}
+                          <SelectItem value="eletronicos">Eletrônicos</SelectItem>
+                          <SelectItem value="informatica">Informática</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
 
               </div>
 
