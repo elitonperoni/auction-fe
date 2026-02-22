@@ -34,7 +34,10 @@ import { RoutesScreenPaths } from "@/src/utils/routesPaths";
 import LoadingSpinner from "@/src/components/Loading/loadingSpinner";
 import { useSelector } from "react-redux";
 import { RootState } from "@/src/store/store";
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
+import { Checkbox } from "@/src/components/ui/checkbox";
+import { ConditionProductEnum } from "@/src/utils/enums/conditionProductEnum";
+import { PackagingCondition } from "@/src/utils/enums/conditionPackaging";
 
 export default function CreateAuctionForm() {
   const [originalPhotos, setOriginalPhotos] = useState<string[]>([]);
@@ -54,8 +57,17 @@ export default function CreateAuctionForm() {
     description: z
       .string()
       .min(20, "Descreva melhor o produto (mín. 20 caracteres)"),
+    category: z.string(),
+    condition: z.string( {
+      required_error: "Por favor, selecione a condição do produto.",
+    }),
+    conditionPackaging: z.string(),
+    isRepackaged: z.boolean(),
+    state: z.string(),
+    country: z.string(),
+    city: z.string(),
     initialValue: z
-      .string()
+      .number()
       .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
         message: "O valor inicial deve ser maior que zero",
       }),
@@ -69,7 +81,7 @@ export default function CreateAuctionForm() {
     defaultValues: {
       title: "",
       description: "",
-      initialValue: "",
+      initialValue: 0,
     },
   });
 
@@ -85,7 +97,7 @@ export default function CreateAuctionForm() {
       .then((resp) => {
         form.setValue("title", resp.title)
         form.setValue("description", resp.description)
-        form.setValue("initialValue", Number(resp.initialValue).toString())
+        form.setValue("initialValue", resp.initialValue)
         form.setValue("endDate", new Date(resp.endDate))
         if (resp.photos) {
           setOriginalPhotos(resp.photos);
@@ -131,9 +143,8 @@ export default function CreateAuctionForm() {
         formData.append("NewImages", file);
       });
     }
-
     imagesToRemove.forEach(url => formData.append("ImagesToRemove", url));
-    
+
     auctionApi.create(formData).then((response) => {
       if (isEditing)
         ToastSuccess("Leilão editado com sucesso!");
@@ -153,7 +164,7 @@ export default function CreateAuctionForm() {
     <main className="max-w-3xl mx-auto py-10 px-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">{isEditing ? dict!.auction.update_auction: dict!.auction.save_auction}</CardTitle>
+          <CardTitle className="text-2xl">{isEditing ? dict!.auction.update_auction : dict!.auction.save_auction}</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -190,25 +201,191 @@ export default function CreateAuctionForm() {
                 )}
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Campo 2: Categoria */}
                 <FormField
                   control={form.control}
-                  name="initialValue"
+                  name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Lance Inicial (R$)</FormLabel>
+                      <FormLabel>Categoria</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a categoria..." /> {/* Texto ajustado */}
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="veiculo">Veículos</SelectItem> {/* Values ajustados */}
+                          <SelectItem value="eletronicos">Eletrônicos</SelectItem>
+                          <SelectItem value="informatica">Informática</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Campo 1: Condição */}
+                <FormField
+                  control={form.control}
+                  name="condition"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Condição do Produto</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a condição..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value={String(ConditionProductEnum.NEW)}>Novo / Lacrado</SelectItem>
+                          <SelectItem value={String(ConditionProductEnum.OPEN_BOX)}>Open Box / Reembalado</SelectItem>
+                          <SelectItem value={String(ConditionProductEnum.LIKE_NEW)}>Seminovo</SelectItem>
+                          <SelectItem value={String(ConditionProductEnum.USED)}>Usado (Bom estado)</SelectItem>
+                          <SelectItem value={String(ConditionProductEnum.INCOMPLETE)}>Com Avaria / Incompleto</SelectItem>
+                          <SelectItem value={String(ConditionProductEnum.SALVAGE)}>Danificado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="conditionPackaging"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Condição embalagem</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a condição..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>                          
+                          <SelectItem value={String(PackagingCondition.REPACKAGED)}>Reembalado / Genérica</SelectItem>
+                          <SelectItem value={String(PackagingCondition.ORIGINAL_INTACT)}>Caixa Original Intacta</SelectItem>
+                          <SelectItem value={String(PackagingCondition.ORIGINAL_DAMAGED)}>Caixa Original com Avarias</SelectItem>
+                          <SelectItem value={String(PackagingCondition.NO_PACKAGING)}>Sem embalagem</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+
+                {/* Campo 3: Produto reembalado? (Checkbox) */}
+                <FormField
+                  control={form.control}
+                  name="isRepackaged"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-8 border border-gray-300 rounded-md p-2">
                       <FormControl>
-                        <Input
-                          disabled={isEditing}
-                          type="number"
-                          step="0.01"
-                          placeholder="0,00"
-                          {...field}
+                        <Checkbox className="border-black"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
                         />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="cursor-pointer">
+                          Produto sem garantia
+                        </FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* LOCALIZAÇÃO (País, Estado, Cidade) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <FormField
+                  control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>País</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: Brasil" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estado</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: Paraná" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: Pato Branco" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* VALOR E DATA */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="initialValue"
+                  render={({ field }) => {
+                    const displayValue = field.value
+                      ? new Intl.NumberFormat("pt-BR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      }).format(field.value)
+                      : "";
+
+                    return (
+                      <FormItem>
+                        <FormLabel>Lance Inicial (R$)</FormLabel>
+                        <FormControl>
+                          <Input
+                            disabled={isEditing}
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="0,00"
+                            value={displayValue}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, "");
+                              if (!value) {
+                                field.onChange("");
+                                return;
+                              }
+                              const numericValue = Number(value) / 100;
+                              field.onChange(numericValue);
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 <FormField
@@ -228,9 +405,9 @@ export default function CreateAuctionForm() {
                               )}
                             >
                               {field.value ? (
-                                format(field.value, "PPP", { locale: ptBR })
+                                format(field.value, "PPP 'às' HH:mm", { locale: ptBR })
                               ) : (
-                                <span>Selecione uma data</span>
+                                <span>Selecione uma data e horário</span>
                               )}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
@@ -240,11 +417,41 @@ export default function CreateAuctionForm() {
                           <Calendar
                             mode="single"
                             selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date()}
+                            onSelect={(date) => {
+                              if (!date) return field.onChange(date);
+
+                              const newDate = new Date(date);
+                              if (field.value) {
+                                newDate.setHours(field.value.getHours());
+                                newDate.setMinutes(field.value.getMinutes());
+                              }
+                              field.onChange(newDate);
+                            }}
+                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                             autoFocus
                             locale={ptBR}
                           />
+
+                          <div className="p-3 border-t border-border">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">Horário:</span>
+                              <input
+                                type="time"
+                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                value={field.value ? format(field.value, "HH:mm") : ""}
+                                onChange={(e) => {
+                                  const time = e.target.value;
+                                  if (!time) return;
+
+                                  const [hours, minutes] = time.split(":");                                  
+                                  const newDate = field.value ? new Date(field.value) : new Date();
+                                  newDate.setHours(parseInt(hours), parseInt(minutes), 0);
+                                  field.onChange(newDate);
+                                }}
+                              />
+                            </div>
+                          </div>
+
                         </PopoverContent>
                       </Popover>
                       <FormMessage />
@@ -273,12 +480,12 @@ export default function CreateAuctionForm() {
                   </label>
                 </div>
 
+                {/* Preview das imagens permanece igual */}
                 {(
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mt-4">
-
                     {originalPhotos.map((url, index) => (
                       <div key={`old-${index}`} className="relative group aspect-square rounded-md overflow-hidden border">
-                        <img src={url} className="w-full h-full object-cover" />
+                        <img src={url} className="w-full h-full object-cover" alt="Foto original do produto" />
                         <button
                           type="button"
                           onClick={() => removeImage(index, true)}
@@ -291,7 +498,7 @@ export default function CreateAuctionForm() {
 
                     {previews.map((url, index) => (
                       <div key={`new-${index}`} className="relative group aspect-square rounded-md overflow-hidden border">
-                        <img src={url} className="w-full h-full object-cover" />
+                        <img src={url} className="w-full h-full object-cover" alt="Nova foto do produto" />
                         <button
                           type="button"
                           onClick={() => removeImage(index, false)}
@@ -301,7 +508,6 @@ export default function CreateAuctionForm() {
                         </button>
                       </div>
                     ))}
-
                   </div>
                 )}
               </div>
