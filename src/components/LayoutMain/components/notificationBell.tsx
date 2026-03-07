@@ -83,7 +83,7 @@ export function NotificationBell() {
             {/* Botão do Sino */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-full transition-colors focus:outline-none"
+                className="relative p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-full transition-colors focus:outline-none cursor-pointer"
                 aria-label="Notificações"
             >
                 <Bell className="w-5 h-5 sm:w-6 h-6" />
