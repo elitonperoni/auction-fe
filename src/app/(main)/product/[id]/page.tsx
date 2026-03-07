@@ -555,7 +555,7 @@ export default function ProductPage() {
                       <div className="flex items-center justify-between mb-4">
                         {/* Título à Esquerda */}
                         <h3 className="text-2xl font-bold text-foreground">
-                          Histórico de Lances em tempo real
+                          Histórico de Lances em Tempo Real
                         </h3>
 
                         {/* Quantidade à Direita */}
