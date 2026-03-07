@@ -26,6 +26,7 @@
     "NEW": "Novo / Lacrado",
     "OPEN_BOX": "Open Box / Reembalado",
     "LIKE_NEW": "Seminovo",
+    "USED": "Usado",
     "INCOMPLETE": "Com Avaria / Incompleto",
     "SALVAGE": "Danificado"
   },
