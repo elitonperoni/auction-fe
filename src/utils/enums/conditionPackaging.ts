@@ -1,4 +1,4 @@
-export enum PackagingCondition {
+export enum PackagingConditionEnum {
   ORIGINAL_INTACT = 1,
   ORIGINAL_DAMAGED = 2,
   REPACKAGED = 3,

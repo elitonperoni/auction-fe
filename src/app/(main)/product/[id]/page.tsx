@@ -62,6 +62,7 @@ export default function ProductPage() {
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const [currentZoomIndex, setCurrentZoomIndex] = useState(0);
   const user = useSelector((state: RootState) => state.user);
+  const { dict } = useSelector((state: RootState) => state.user);
 
   useEffect(() => {
     fetchProductDetails(productId);
@@ -154,8 +155,7 @@ export default function ProductPage() {
     await auctionApi
       .getDetail(id)
       .then((data) => {
-        setProduct(data);
-        setIsCurrentUserAuctionOwner(data.isOwner);
+        setProduct(data);        
         setIsLoadingScreen(false);
       })
       .catch((error) => {
@@ -454,15 +454,15 @@ export default function ProductPage() {
                   <TabsList className="grid w-full grid-cols-2 mb-6">
                     <TabsTrigger
                       value="details"
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 cursor-pointer"
                     >
-                      <CheckCircle2 className="h-4 w-4" /> Detalhes do Produto
+                      <CheckCircle2 className="h-4 w-4 " /> Detalhes do Produto
                     </TabsTrigger>
                     <TabsTrigger
                       value="history"
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 cursor-pointer"
                     >
-                      <History className="h-4 w-4" /> Histórico de Lances
+                      <History className="h-4 w-4" /> Histórico de Lances Em Tempo Real
                     </TabsTrigger>
                   </TabsList>
 
@@ -472,18 +472,32 @@ export default function ProductPage() {
                         {product.title}
                       </h1>
 
-                      <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-border">
+                      <div className="grid grid-cols-2 gap-4 pb-6 border-b border-border">
                         <div>
                           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
                             Categoria
                           </p>
-                          <Badge variant="secondary">{product.category}</Badge>
+                          <Badge variant="secondary">{(dict as any)?.category_product?.[product.category]}</Badge>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
-                            Condição
+                            Condição do Produto
+                          </p>                          
+                          <Badge variant="secondary">{(dict as any)?.condition_product?.[product.conditionProduct]}</Badge>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+                            Condição da Embalagem
                           </p>
-                          <Badge variant="outline">{product.condition}</Badge>
+                           <Badge variant="secondary">{(dict as any)?.condition_packaging?.[product.conditionPackaging]}</Badge>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+                            Garantia
+                          </p>
+                          <Badge variant={product.withoutWarranty ? "destructive" : "secondary" }>
+                            {product.withoutWarranty ? "Sem Garantia" : "Com Garantia"}
+                          </Badge>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
@@ -502,7 +516,7 @@ export default function ProductPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="mb-6">
+                      <div className="mb-4">
                         <h3 className="font-bold text-foreground mb-3">
                           Descrição
                         </h3>
@@ -524,12 +538,12 @@ export default function ProductPage() {
                               {"4.9"} (Avaliação)
                             </p>
                           </div>
-                          <Button
+                          {/* <Button
                             variant="outline"
                             className="border-border bg-transparent"
                           >
                             Contatar Vendedor
-                          </Button>
+                          </Button> */}
                         </div>
                       </Card>
                     </Card>
@@ -541,7 +555,7 @@ export default function ProductPage() {
                       <div className="flex items-center justify-between mb-4">
                         {/* Título à Esquerda */}
                         <h3 className="text-2xl font-bold text-foreground">
-                          Histórico de Lances
+                          Histórico de Lances em tempo real
                         </h3>
 
                         {/* Quantidade à Direita */}

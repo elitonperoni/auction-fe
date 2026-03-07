@@ -37,7 +37,9 @@ import { RootState } from "@/src/store/store";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { ConditionProductEnum } from "@/src/utils/enums/conditionProductEnum";
-import { PackagingCondition } from "@/src/utils/enums/conditionPackaging";
+import { PackagingConditionEnum } from "@/src/utils/enums/conditionPackaging";
+import { CategoryProductsEnum } from "@/src/utils/enums/categoryProductEnum";
+import { State, City } from "country-state-city";
 
 export default function CreateAuctionForm() {
   const [originalPhotos, setOriginalPhotos] = useState<string[]>([]);
@@ -57,15 +59,25 @@ export default function CreateAuctionForm() {
     description: z
       .string()
       .min(20, "Descreva melhor o produto (mín. 20 caracteres)"),
-    category: z.string(),
-    condition: z.string( {
-      required_error: "Por favor, selecione a condição do produto.",
+    category: z.string({
+      required_error: "Selecione a categoria do produto.",
     }),
-    conditionPackaging: z.string(),
-    isRepackaged: z.boolean(),
-    state: z.string(),
-    country: z.string(),
-    city: z.string(),
+    condition: z.string({
+      required_error: "Selecione a condição do produto.",
+    }),
+    conditionPackaging: z.string({
+      required_error: "Selecione a condição do embalagem.",
+    }),
+    withoutWarranty: z.boolean(),
+    state: z.string({
+      required_error: "Estado obrigatório",
+    }),
+    country: z.string({
+      required_error: "País obrigatório",
+    }),
+    city: z.string({
+      required_error: "Cidade obrigatória",
+    }),
     initialValue: z
       .number()
       .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
@@ -82,23 +94,45 @@ export default function CreateAuctionForm() {
       title: "",
       description: "",
       initialValue: 0,
+      withoutWarranty: false,
     },
   });
+
+  const paisSelecionado = form.watch("country");
+  const estadoSelecionado = form.watch("state");
+
+  const paisesDisponiveis = [
+    { nome: "Brasil", isoCode: "BR" },
+    { nome: "Estados Unidos", isoCode: "US" }
+  ];
+  const estados = paisSelecionado ? State.getStatesOfCountry(paisSelecionado) : [];
+
+  const cidades = (paisSelecionado && estadoSelecionado)
+    ? City.getCitiesOfState(paisSelecionado, estadoSelecionado)
+    : [];
 
   useEffect(() => {
     if (isEditing) {
       getDetail();
     }
-  }, [])
+  }, []);
 
   async function getDetail() {
     setLoading(true);
     await auctionApi.getRegisterDetail(String(auctionId))
       .then((resp) => {
+        debugger
         form.setValue("title", resp.title)
         form.setValue("description", resp.description)
         form.setValue("initialValue", resp.initialValue)
         form.setValue("endDate", new Date(resp.endDate))
+        form.setValue("condition", String(resp.conditionProductId))
+        form.setValue("conditionPackaging", String(resp.conditionPackagingId))
+        form.setValue("category", String(resp.categoryProductId))
+        form.setValue("withoutWarranty", resp.withoutWarranty)
+        form.setValue("country", resp.country)
+        form.setValue("state", resp.state)
+        form.setValue("city", resp.city)
         if (resp.photos) {
           setOriginalPhotos(resp.photos);
         }
@@ -123,6 +157,7 @@ export default function CreateAuctionForm() {
       setOriginalPhotos(prev => prev.filter((_, i) => i !== index));
     } else {
       setNewImages(prev => prev.filter((_, i) => i !== index));
+      setPreviews(prev => prev.filter((_, i) => i !== index));
     }
   };
 
@@ -137,6 +172,13 @@ export default function CreateAuctionForm() {
     formData.append("Description", values.description);
     formData.append("StartingPrice", Number(values.initialValue).toString());
     formData.append("EndDate", values.endDate.toISOString());
+    formData.append("ConditionProductId", values.condition);
+    formData.append("ConditionPackagingId", values.conditionPackaging);
+    formData.append("WithoutWarranty", String(values.withoutWarranty));
+    formData.append("CategoryProductId", values.category);
+    formData.append("Country", values.country);
+    formData.append("State", values.state);
+    formData.append("City", values.city);
 
     if (newImages && newImages.length > 0) {
       newImages.forEach((file) => {
@@ -201,7 +243,7 @@ export default function CreateAuctionForm() {
                 )}
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">               
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Campo 1: Condição */}
                 <FormField
                   control={form.control}
@@ -211,7 +253,7 @@ export default function CreateAuctionForm() {
                       <FormLabel>Condição do Produto</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Selecione a condição..." />
                           </SelectTrigger>
                         </FormControl>
@@ -237,15 +279,15 @@ export default function CreateAuctionForm() {
                       <FormLabel>Condição embalagem</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Selecione a condição..." />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>                          
-                          <SelectItem value={String(PackagingCondition.REPACKAGED)}>Reembalado / Genérica</SelectItem>
-                          <SelectItem value={String(PackagingCondition.ORIGINAL_INTACT)}>Caixa Original Intacta</SelectItem>
-                          <SelectItem value={String(PackagingCondition.ORIGINAL_DAMAGED)}>Caixa Original com Avarias</SelectItem>
-                          <SelectItem value={String(PackagingCondition.NO_PACKAGING)}>Sem embalagem</SelectItem>
+                        <SelectContent>
+                          <SelectItem value={String(PackagingConditionEnum.REPACKAGED)}>Reembalado / Genérica</SelectItem>
+                          <SelectItem value={String(PackagingConditionEnum.ORIGINAL_INTACT)}>Caixa Original Intacta</SelectItem>
+                          <SelectItem value={String(PackagingConditionEnum.ORIGINAL_DAMAGED)}>Caixa Original com Avarias</SelectItem>
+                          <SelectItem value={String(PackagingConditionEnum.NO_PACKAGING)}>Sem embalagem</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -253,7 +295,7 @@ export default function CreateAuctionForm() {
                   )}
                 />
 
-                 {/* Campo 2: Categoria */}
+                {/* Campo 2: Categoria */}
                 <FormField
                   control={form.control}
                   name="category"
@@ -262,30 +304,27 @@ export default function CreateAuctionForm() {
                       <FormLabel>Categoria</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Selecione a categoria..." /> {/* Texto ajustado */}
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="veiculo">Veículos</SelectItem> {/* Values ajustados */}
-                          <SelectItem value="eletronicos">Eletrônicos</SelectItem>
-                          <SelectItem value="informatica">Informática</SelectItem>
+                          <SelectItem value={String(CategoryProductsEnum.VEHICLES)}>Veículos</SelectItem> {/* Values ajustados */}
+                          <SelectItem value={String(CategoryProductsEnum.ELECTRONICS)}>Eletrônicos</SelectItem>
+                          <SelectItem value={String(CategoryProductsEnum.COMPUTING)}>Informática</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
-
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
 
-                {/* Campo 3: Produto reembalado? (Checkbox) */}
                 <FormField
                   control={form.control}
-                  name="isRepackaged"
+                  name="withoutWarranty"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-8 border border-gray-300 rounded-md p-2">
                       <FormControl>
@@ -306,43 +345,95 @@ export default function CreateAuctionForm() {
 
               {/* LOCALIZAÇÃO (País, Estado, Cidade) */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
                 <FormField
                   control={form.control}
                   name="country"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>País</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Brasil" {...field} />
-                      </FormControl>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          form.setValue("state", ""); 
+                          form.setValue("city", ""); 
+                        }}
+                        defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione o país..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {paisesDisponiveis.map((pais) => (
+                            <SelectItem key={pais.isoCode} value={pais.isoCode}>
+                              {pais.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
+                {/* ESTADO */}
                 <FormField
                   control={form.control}
                   name="state"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Estado</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Paraná" {...field} />
-                      </FormControl>
+                      <Select
+                        key={paisSelecionado}
+                        onValueChange={field.onChange}                        
+                        value={field.value || undefined}
+                        disabled={!paisSelecionado || estados.length === 0}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione o estado..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {estados.map((estado) => (
+                            <SelectItem key={estado.isoCode} value={estado.isoCode}>
+                              {estado.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
+                {/* CIDADE */}
                 <FormField
                   control={form.control}
                   name="city"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Cidade</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Pato Branco" {...field} />
-                      </FormControl>
+                      <Select
+                        key={estadoSelecionado}
+                        onValueChange={field.onChange}
+                        value={field.value || undefined}
+                        disabled={!estadoSelecionado || cidades.length === 0}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione a cidade..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {cidades.map((cidade) => (
+                            <SelectItem key={cidade.name} value={cidade.name}>
+                              {cidade.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -444,7 +535,7 @@ export default function CreateAuctionForm() {
                                   const time = e.target.value;
                                   if (!time) return;
 
-                                  const [hours, minutes] = time.split(":");                                  
+                                  const [hours, minutes] = time.split(":");
                                   const newDate = field.value ? new Date(field.value) : new Date();
                                   newDate.setHours(parseInt(hours), parseInt(minutes), 0);
                                   field.onChange(newDate);

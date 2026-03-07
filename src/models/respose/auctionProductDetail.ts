@@ -9,7 +9,9 @@ export interface AuctionProductDetail {
   description: string;
   seller: string;
   isOwner: boolean;
-  condition: string;
+  conditionProduct: string;
+  conditionPackaging: string;
+  withoutWarranty: boolean;
   location: string;
   startDate: Date;
   endDate: Date;
@@ -23,6 +25,13 @@ export interface AuctionRegisterDetail {
   photos: string[];
   endDate: Date;
   description: string;  
+  conditionProductId: number;  
+  conditionPackagingId: number;  
+  categoryProductId: number;  
+  withoutWarranty: boolean;  
+  country: string;  
+  state: string;  
+  city: string; 
 }
 
 export interface BidHistory{
