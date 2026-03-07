@@ -26,6 +26,7 @@
     "NEW": "New / Sealed",
     "OPEN_BOX": "Open Box / Repackaged",
     "LIKE_NEW": "Like New",
+    "USED": "Used",
     "INCOMPLETE": "Damaged / Incomplete",
     "SALVAGE": "Salvage / Damaged"
   },
