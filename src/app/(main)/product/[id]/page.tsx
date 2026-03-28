@@ -92,7 +92,7 @@ export default function ProductPage() {
             bidderName: newBidderName,
             amount: newBidAmount,
             date: new Date(newBidTime),
-          };          
+          };
           showNotifyBid(newBidderId == user.id, !!product?.isOwner, newBidderName, newBidAmount);
           setIsLoadingBid(false);
 
@@ -155,7 +155,7 @@ export default function ProductPage() {
     await auctionApi
       .getDetail(id)
       .then((data) => {
-        setProduct(data);        
+        setProduct(data);
         setIsLoadingScreen(false);
       })
       .catch((error) => {
@@ -380,7 +380,14 @@ export default function ProductPage() {
                       </CarouselContent>
 
                       <Dialog open={isZoomOpen} onOpenChange={setIsZoomOpen}>
-                        <DialogContent className="!max-w-none !w-screen !h-screen p-0 bg-white-950/95 border-none shadow-none overflow-hidden outline-none flex items-center justify-center fixed inset-0 translate-x-0 translate-y-0">
+                        <DialogContent
+                          className="!max-w-none !w-screen !h-screen p-0 bg-white-950/95 border-none shadow-none overflow-hidden outline-none flex items-center justify-center fixed inset-0 translate-x-0 translate-y-0"
+                          onPointerDown={(e) => {
+                            if ((e.target as HTMLElement).closest("img") === null) {
+                              setIsZoomOpen(false);
+                            }
+                          }}
+                        >
                           <DialogTitle className="sr-only">
                             Visualização de {product.title}
                           </DialogTitle>
@@ -393,6 +400,7 @@ export default function ProductPage() {
 
                           {product.photos.length > 1 && (
                             <button
+                              onPointerDown={(e) => e.stopPropagation()}
                               onClick={handlePrevious}
                               className="absolute left-4 top-1/2 -translate-y-1/2 z-[60] p-2 text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
                             >
@@ -402,6 +410,7 @@ export default function ProductPage() {
 
                           {product.photos.length > 1 && (
                             <button
+                              onPointerDown={(e) => e.stopPropagation()}
                               onClick={handleNext}
                               className="absolute right-4 top-1/2 -translate-y-1/2 z-[60] p-2 text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
                             >
@@ -422,6 +431,7 @@ export default function ProductPage() {
                                   src={product.photos[currentZoomIndex]}
                                   alt="Zoom"
                                   className="max-w-full max-h-full w-auto h-auto object-contain"
+                                  onPointerDown={(e) => e.stopPropagation()}
                                 />
                               </TransformComponent>
                             </TransformWrapper>
@@ -462,7 +472,7 @@ export default function ProductPage() {
                       value="history"
                       className="flex items-center gap-2 cursor-pointer"
                     >
-                      <History className="h-4 w-4" /> Histórico de Lances Em Tempo Real
+                      <History className="h-4 w-4" /> Histórico de Lances
                     </TabsTrigger>
                   </TabsList>
 
@@ -482,20 +492,20 @@ export default function ProductPage() {
                         <div>
                           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
                             Condição do Produto
-                          </p>                          
+                          </p>
                           <Badge variant="secondary">{(dict as any)?.condition_product?.[product.conditionProduct]}</Badge>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
                             Condição da Embalagem
                           </p>
-                           <Badge variant="secondary">{(dict as any)?.condition_packaging?.[product.conditionPackaging]}</Badge>
+                          <Badge variant="secondary">{(dict as any)?.condition_packaging?.[product.conditionPackaging]}</Badge>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
                             Garantia
                           </p>
-                          <Badge variant={product.withoutWarranty ? "destructive" : "secondary" }>
+                          <Badge variant={product.withoutWarranty ? "destructive" : "secondary"}>
                             {product.withoutWarranty ? "Sem Garantia" : "Com Garantia"}
                           </Badge>
                         </div>
