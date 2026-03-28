@@ -4,30 +4,31 @@ import { getSignalRConnection, startSignalRConnection } from "@/src/api/hub";
 import { RootState } from "@/src/store/store";
 import { ChannelNames } from "@/src/utils/channerlNames";
 import { Bell } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import {  useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import * as signalR from "@microsoft/signalr";
 import { useRouter } from "next/navigation";
 import { RoutesScreenPaths } from "@/src/utils/routesPaths";
-import { userApi } from "@/src/api";
+import { notificationApi } from "@/src/api";
 import getTimeAgo from "@/src/utils/getTimeAgo";
+import ToastSuccess from "../../Toast/toastNotificationSuccess";
+import ToastInfo from "../../Toast/toastNotificationInfo";
 
 export function NotificationBell() {
     const [isOpen, setIsOpen] = useState(false);
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-    const [hasUnread, setHasUnread] = useState(false);
     const user = useSelector((state: RootState) => state.user);
     const router = useRouter();
+    const hasUnread = notifications.some(n => !n.isRead);
 
     const userGroupName = String(user.id);
 
     useEffect(() => {
-
         getNotifications();
     }, [])
 
     async function getNotifications() {
-        await userApi.getNotifications()
+        await notificationApi.getNotifications()
             .then((resp) => {
                 setNotifications(resp)
             })
@@ -38,12 +39,13 @@ export function NotificationBell() {
             id: crypto.randomUUID(),
             message,
             createdAt: new Date(),
-            isRead: false,
+            isRead: isOpen,
             auctionId: auctionId
         };
 
         setNotifications(prev => [newNotification, ...prev]);
-        setHasUnread(true);
+
+        ToastInfo(message);
     }, []);
 
     useEffect(() => {
@@ -78,11 +80,22 @@ export function NotificationBell() {
         handleNotification,
     ]);
 
+    function markAllAsRead() {
+        debugger
+        setNotifications(prev =>
+            prev.map(n => ({ ...n, isRead: true })));
+
+        notificationApi.markNotificationsAsRead(null);
+    }
+
     return (
         <div className="relative">
             {/* Botão do Sino */}
             <button
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => {
+                    const opening = !isOpen;
+                    setIsOpen(opening)
+                }}
                 className="relative p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-full transition-colors focus:outline-none cursor-pointer"
                 aria-label="Notificações"
             >
@@ -104,26 +117,57 @@ export function NotificationBell() {
                     />
 
                     <div className="absolute -right-20 sm:right-0 mt-2 w-[75vw] max-w-[320px] sm:max-w-none sm:w-80 bg-white dark:bg-zinc-900 rounded-lg shadow-xl border border-zinc-200 dark:border-zinc-800 z-20 overflow-hidden">
-                        <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 font-bold text-zinc-700 dark:text-zinc-200">
-                            Notificações
+                        <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                            <span className="font-bold text-zinc-700 dark:text-zinc-200">
+                                Notificações
+                            </span>
+                            {notifications.some(n => !n.isRead) && (
+                                <button
+                                    onClick={markAllAsRead}
+                                    className="text-xs text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors cursor-pointer whitespace-nowrap"
+                                >
+                                    Marcar todas como lidas
+                                </button>
+                            )}
                         </div>
-
                         {/* Corrigido para max-h */}
                         <div className="max-h-[300px] overflow-y-auto">
                             {notifications && notifications.length > 0 ? (
                                 notifications.map((mp, index) => (
                                     <div
                                         key={`${mp.id}-${index}`}
-                                        className="p-4 border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer flex flex-col gap-1"
+                                        className={`
+                                                p-4 border-b border-zinc-100 dark:border-zinc-800
+                                                hover:bg-zinc-50 dark:hover:bg-zinc-800/50
+                                                cursor-pointer flex flex-col gap-1 transition-colors
+                                                ${!mp.isRead
+                                                ? "bg-blue-50 dark:bg-blue-950/30 border-l-2 border-l-blue-400 dark:border-l-blue-500"
+                                                : ""}
+                                        `}
                                         onClick={() => {
                                             router.push(RoutesScreenPaths.AUCTION_DETAIL(mp.auctionId!));
-                                            setHasUnread(false);
+                                            if (!mp.isRead) {   
+                                                notificationApi.markNotificationsAsRead(mp.id!);
+                                            }
+                                            setNotifications(prev =>
+                                                prev.map(n =>
+                                                    n.id === mp.id ? { ...n, isRead: true } : n
+                                                )
+                                            );
                                             setIsOpen(false);
                                         }}
                                     >
-                                        <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                                            <strong>{mp.message}</strong>
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            {!mp.isRead && (
+                                                <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                                            )}
+                                            <span className={`text-sm ${!mp.isRead
+                                                ? "text-zinc-900 dark:text-zinc-100 font-semibold"
+                                                : "text-zinc-700 dark:text-zinc-300 font-normal"
+                                                }`}>
+                                                {mp.message}
+                                            </span>
+                                        </div>
 
                                         <span className="text-xs text-zinc-400 dark:text-zinc-500">
                                             {getTimeAgo(mp.createdAt)}

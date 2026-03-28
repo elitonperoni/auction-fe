@@ -1,7 +1,7 @@
 import { AuthApi } from "./authApi";
 import { AuctionApi } from './auctionApi';
-import { UserApi } from "./userApi";
+import { NotificationApi } from "./notificationApi";
 
 export const authApi = new  AuthApi();
 export const auctionApi = new  AuctionApi();
-export const userApi = new  UserApi();
+export const notificationApi = new  NotificationApi();

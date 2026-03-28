@@ -48,6 +48,7 @@ export default function CreateAuctionForm() {
   const [previews, setPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingSave, setLoadingSave] = useState<boolean>(false);
+  const [isDragging, setIsDragging] = useState(false);
   const router = useRouter();
   const params = useParams();
   const auctionId = params?.id;
@@ -355,8 +356,8 @@ export default function CreateAuctionForm() {
                       <Select
                         onValueChange={(value) => {
                           field.onChange(value);
-                          form.setValue("state", ""); 
-                          form.setValue("city", ""); 
+                          form.setValue("state", "");
+                          form.setValue("city", "");
                         }}
                         defaultValue={field.value}>
                         <FormControl>
@@ -386,7 +387,7 @@ export default function CreateAuctionForm() {
                       <FormLabel>Estado</FormLabel>
                       <Select
                         key={paisSelecionado}
-                        onValueChange={field.onChange}                        
+                        onValueChange={field.onChange}
                         value={field.value || undefined}
                         disabled={!paisSelecionado || estados.length === 0}
                       >
@@ -552,14 +553,32 @@ export default function CreateAuctionForm() {
                 />
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-4" >
                 <FormLabel>Imagens do Produto</FormLabel>
-                <div className="flex items-center justify-center w-full">
-                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted transition-colors border-border">
+                <div
+                  className="flex items-center justify-center w-full"
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+                    if (files.length > 0) {
+                      const syntheticEvent = { target: { files } } as unknown as React.ChangeEvent<HTMLInputElement>;
+                      handleImageChange(syntheticEvent);
+                    }
+                  }}
+                >
+                  <label className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200
+                    ${isDragging
+                      ? "border-primary bg-primary/10 scale-[1.02] shadow-md shadow-primary/20"
+                      : "border-border bg-muted/50 hover:bg-muted"
+                    }`}
+                  >
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <UploadCloud className="w-8 h-8 mb-2 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        Clique para subir fotos
+                      <UploadCloud className={`w-8 h-8 mb-2 transition-all duration-200 ${isDragging ? "text-primary scale-110" : "text-muted-foreground"}`} />
+                      <p className={`text-sm transition-colors duration-200 ${isDragging ? "text-primary font-medium" : "text-muted-foreground"}`}>
+                        {isDragging ? "Solte para carregar" : "Clique ou arraste fotos aqui"}
                       </p>
                     </div>
                     <input
