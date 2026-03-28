@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { RoutesScreenPaths } from "@/src/utils/routesPaths";
 import { notificationApi } from "@/src/api";
 import getTimeAgo from "@/src/utils/getTimeAgo";
+import ToastSuccess from "../../Toast/toastNotificationSuccess";
 
 export function NotificationBell() {
     const [isOpen, setIsOpen] = useState(false);
@@ -42,6 +43,8 @@ export function NotificationBell() {
         };
 
         setNotifications(prev => [newNotification, ...prev]);
+
+        ToastSuccess(message);
     }, []);
 
     useEffect(() => {
