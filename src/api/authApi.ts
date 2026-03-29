@@ -6,7 +6,7 @@ import { setUser, updateExpiration } from "../store/slices/userSlice";
 import { RegisterRequest } from "../models/request/registerRequest";
 import { RecoveryPasswordRequest } from "../models/request/recoveryPasswordRequest";
 import { ResetPasswordRequest } from "../models/request/resetPasswordRequest";
-import ToastInfo from "../components/Toast/toastNotificationInfo";
+import { GetUserByIdResponse } from "../models/respose/getUserByIdResponse";
 
 const baseRoute: string = "users";
 const timeToExpireToken = (1 * 60 * 1000);
@@ -112,6 +112,11 @@ export class AuthApi {
     } catch {
       return false;
     }
+  }
+
+  async getById(id: string): Promise<GetUserByIdResponse> {
+    const response = await api.get(`${baseRoute}/${id}`);
+    return response.data;
   }
 
   async sendLogout(): Promise<void> {

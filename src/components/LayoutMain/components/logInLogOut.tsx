@@ -22,6 +22,7 @@ export default function User({ isAuthenticated, username }: UserGreeting) {
       <div className="text-primary-foreground font-medium">
         {isAuthenticated ? `Olá ${username}!` : "Convidado"}
       </div>
+     
     </div>
   );
 }

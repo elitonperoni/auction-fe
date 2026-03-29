@@ -154,6 +154,7 @@ export default function BidForm({
         </label>
       </div>
       <ButtonCustom
+        className="w-full"
         disabled={!termsAccepted || isEmpty(bidAmount)}
         isLoading={isLoading}
         onClick={handleSubmitBid}
