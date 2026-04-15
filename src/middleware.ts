@@ -11,7 +11,7 @@ export function middleware(request: NextRequest) {
   const publicPaths = [
     "/",
     "/login", 
-    "/reset-password", 
+    "/recovery-password", 
     "/recovery-password",     
     "/register",
   ];

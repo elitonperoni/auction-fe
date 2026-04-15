@@ -4,8 +4,7 @@ import api from "./api";
 import { store } from "../store/store";
 import { setUser, updateExpiration } from "../store/slices/userSlice";
 import { RegisterRequest } from "../models/request/registerRequest";
-import { RecoveryPasswordRequest } from "../models/request/recoveryPasswordRequest";
-import { ResetPasswordRequest } from "../models/request/resetPasswordRequest";
+import { SendEmailRecoveryPasswordRequest, RecoveryPasswordRequest, ResetPasswordRequest } from "../models/request/resetPasswordRequest";
 import { GetUserByIdResponse } from "../models/respose/getUserByIdResponse";
 
 const baseRoute: string = "users";
@@ -84,6 +83,21 @@ export class AuthApi {
     return await api.post(`${baseRoute}/register`, request);
   }
 
+  async sendRecoveryPasswordEmail(request: SendEmailRecoveryPasswordRequest): Promise<boolean> {
+    try {
+      const resp = await api.post(`${baseRoute}/send-recovery-password-email`, request);
+      const response = resp.data;
+
+      if (response) {        
+        return true;
+      } else {        
+        return false;
+      }
+    } catch {
+      return false;
+    }
+  }
+
   async recoveryPassword(request: RecoveryPasswordRequest): Promise<boolean> {
     try {
       const resp = await api.post(`${baseRoute}/recovery-password`, request);
@@ -99,10 +113,10 @@ export class AuthApi {
     }
   }
 
-  async resetPassword(request: ResetPasswordRequest): Promise<boolean> {
+   async resetPassword(request: ResetPasswordRequest): Promise<boolean> {
     try {
       const resp = await api.post(`${baseRoute}/reset-password`, request);
-      const response = resp.data;
+       const response = resp.data;
 
       if (response) {        
         return true;

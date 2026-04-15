@@ -691,7 +691,6 @@ export default function ProductPage() {
     newBidderName: string,
     newBidAmount: number,
   ) {
-    debugger
     if (isBidOwner) {
       ToastSuccess(`Lance processado com sucesso!`);
     }

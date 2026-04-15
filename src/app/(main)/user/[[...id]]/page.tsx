@@ -37,7 +37,7 @@ const profileSchema = z.object({
         .regex(/^[a-z0-9_]+$/, "Apenas letras minúsculas, números e _"),
     email: z.string().email("E-mail inválido"),
     phone: z
-        .string(),           
+        .string(),
     location: z.string().optional(),
     language: z.string(),
     timezone: z.string(),
@@ -45,7 +45,7 @@ const profileSchema = z.object({
     country: z.string().min(1, "Selecione um país"),
     state: z.string().min(1, "Selecione um estado"),
     city: z.string().min(1, "Selecione uma cidade"),
-    memberSince: z.date().optional() 
+    memberSince: z.date().optional()
 });
 
 const passwordSchema = z
@@ -120,9 +120,9 @@ export default function EditProfilePage() {
             location: "",
             timezone: "",
             country: "",
-            state: "",  
-            city: "", 
-            language: "", 
+            state: "",
+            city: "",
+            language: "",
             memberSince: undefined
         },
     });
@@ -130,21 +130,21 @@ export default function EditProfilePage() {
     useEffect(() => {
         if (userId) {
             authApi.getById(userId.toString()).then((resp) => {
-            if (resp) {
-                const userData = resp as GetUserByIdResponse;
-                profileForm.reset({
-                    name: userData.completeName,
-                    username: userData.userName,
-                    email: userData.email,
-                    phone: userData.phone || "",
-                    country: userData.country,
-                    state: userData.state,
-                    city: userData.city,
-                    language: String(userData.languageId),
-                    timezone: userData.timeZone,
-                    memberSince: new Date(userData.memberSince)
-                });
-            }
+                if (resp) {
+                    const userData = resp as GetUserByIdResponse;
+                    profileForm.reset({
+                        name: userData.completeName,
+                        username: userData.userName,
+                        email: userData.email,
+                        phone: userData.phone || "",
+                        country: userData.country,
+                        state: userData.state,
+                        city: userData.city,
+                        language: String(userData.languageId),
+                        timezone: userData.timeZone,
+                        memberSince: new Date(userData.memberSince)
+                    });
+                }
             });
         }
     }, []);
@@ -198,12 +198,20 @@ export default function EditProfilePage() {
     }
 
     async function onPasswordSubmit(data: PasswordValues) {
+        if (data.newPassword !== data.confirmPassword) {
+            ToastError("As senhas não coincidem");
+            return;
+        }
+
         setSavingPassword(true);
-        await new Promise((r) => setTimeout(r, 1200));
-        console.log("Dados da Senha:", data);
-        setSavingPassword(false);
-        passwordForm.reset();
-        toast.success("Senha alterada com sucesso!");
+        authApi.resetPassword({
+            actualPassword: data.currentPassword,
+            newPassword: data.newPassword
+        }).then(() => {
+            ToastSuccess("Senha alterada com sucesso!");
+            setSavingPassword(false);
+            passwordForm.reset();
+        });
     }
 
     async function onSaveNotifs() {
@@ -534,7 +542,7 @@ export default function EditProfilePage() {
                                 </Card>
 
                                 <div className="flex justify-end gap-2">
-                                    <ButtonCustom variant="outline" size="sm" className="bg-white text-gray-800" onClick={() => profileForm.reset()}>Cancelar</ButtonCustom>                                    
+                                    <ButtonCustom variant="outline" size="sm" className="bg-white text-gray-800" onClick={() => profileForm.reset()}>Cancelar</ButtonCustom>
                                     <ButtonCustom isSubmit size="sm" disabled={savingProfile}>
                                         {savingProfile ? <><Spinner /> Salvando...</> : <><Save className="h-3.5 w-3.5" /> Salvar alterações</>}
                                     </ButtonCustom>
