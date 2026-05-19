@@ -7,6 +7,9 @@ import * as z from "zod";
 import {
     User, Mail, Phone, MapPin, Lock, Camera, Save,
     ArrowLeft, Eye, EyeOff, Bell, Globe, CheckCircle2,
+    Send,
+    CheckCircle,
+    RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +31,7 @@ import { UpdateUserRequest } from './../../../../models/request/updateUserReques
 import ToastSuccess from "@/src/components/Toast/toastNotificationSuccess";
 import ToastError from "@/src/components/Toast/toastNotificationError";
 import ButtonCustom from "@/src/components/Button/button";
+import { NotificationTypeEnum } from "@/src/utils/enums/notificationTypeEnum";
 
 const profileSchema = z.object({
     name: z.string().min(2, "Nome deve ter ao menos 2 caracteres"),
@@ -45,7 +49,9 @@ const profileSchema = z.object({
     country: z.string().min(1, "Selecione um país"),
     state: z.string().min(1, "Selecione um estado"),
     city: z.string().min(1, "Selecione uma cidade"),
-    memberSince: z.date().optional()
+    memberSince: z.date().optional(),
+    telegram: z.boolean().default(false),
+    telegramConfigured: z.boolean().default(false)
 });
 
 const passwordSchema = z
@@ -102,6 +108,8 @@ export default function EditProfilePage() {
     const [savingProfile, setSavingProfile] = useState(false);
     const [savingPassword, setSavingPassword] = useState(false);
     const [savingNotifs, setSavingNotifs] = useState(false);
+    const [telegramLink, setTelegramLink] = useState<string | null>(null)
+    const [gerandoLink, setGerandoLink] = useState(false)
 
     const [notifications, setNotifications] = useState<Record<NotifKey, boolean>>({
         emailUpdates: true,
@@ -123,9 +131,13 @@ export default function EditProfilePage() {
             state: "",
             city: "",
             language: "",
-            memberSince: undefined
+            memberSince: undefined,
+            telegram: false
         },
     });
+
+    const telegramAtivo = profileForm.watch("telegram");
+    const telegramConfigured = profileForm.watch("telegramConfigured");
 
     useEffect(() => {
         if (userId) {
@@ -142,7 +154,9 @@ export default function EditProfilePage() {
                         city: userData.city,
                         language: String(userData.languageId),
                         timezone: userData.timeZone,
-                        memberSince: new Date(userData.memberSince)
+                        memberSince: new Date(userData.memberSince),
+                        telegramConfigured: userData.telegramConfigured,
+                        telegram: userData.userNotifications.includes(NotificationTypeEnum.TELEGRAM)
                     });
                 }
             });
@@ -216,9 +230,32 @@ export default function EditProfilePage() {
 
     async function onSaveNotifs() {
         setSavingNotifs(true);
-        await new Promise((r) => setTimeout(r, 900));
-        setSavingNotifs(false);
+
+        const payload: { key: number; value: boolean }[] = [
+            { key: NotificationTypeEnum.TELEGRAM, value: telegramAtivo },
+        ];
+
+        userApi.saveNotificationsConfig(payload).then(() => {
+            ToastSuccess("Configurações de notificação salvas!");
+        }).catch(() => {
+            ToastError("Erro ao salvar configurações. Tente novamente.");
+        }).finally(() => {
+            setSavingNotifs(false);
+        });
         toast.success("Notificações salvas!");
+    }
+
+    function gerarLinkTelegram() {
+        setGerandoLink(true)
+        try {
+            userApi.generateLinkTelegram()
+                .then((res) => {
+                    setTelegramLink(res)
+                })
+        }
+        finally {
+            setGerandoLink(false)
+        }
     }
 
     const EyeToggle = ({ show, onToggle }: { show: boolean; onToggle: () => void }) => (
@@ -633,18 +670,82 @@ export default function EditProfilePage() {
                                 <CardDescription className="text-xs">Escolha como e quando deseja ser notificado</CardDescription>
                             </CardHeader>
                             <CardContent className="divide-y">
-                                {NOTIF_ITEMS.map(({ key, label, desc }) => (
-                                    <div key={key} className="flex items-center justify-between py-3">
-                                        <div>
-                                            <p className="text-sm font-medium">{label}</p>
-                                            <p className="text-xs text-muted-foreground">{desc}</p>
+                                {
+                                    <div className="py-4 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm font-medium flex items-center gap-2">
+                                                    <Send className="h-3.5 w-3.5 text-blue-500" />
+                                                    Notificações no Telegram
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Receba alertas de lances e arremates via Telegram
+                                                </p>
+                                            </div>
+                                            <Switch
+                                                checked={telegramAtivo}
+                                                onCheckedChange={(v) => {
+                                                    profileForm.setValue("telegram", v);
+                                                    if (!v) setTelegramLink(null)
+                                                }}
+                                            />
                                         </div>
-                                        <Switch
-                                            checked={notifications[key]}
-                                            onCheckedChange={(v) => setNotifications((prev) => ({ ...prev, [key]: v }))}
-                                        />
+
+                                        {telegramAtivo && (
+                                            <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
+                                                {!telegramConfigured ? (
+                                                    // não vinculado — mostra botão/link
+                                                    !telegramLink ? (
+                                                        <Button size="sm" onClick={gerarLinkTelegram} disabled={gerandoLink}>
+                                                            {gerandoLink ? <><Spinner /> Gerando link...</> : "Vincular conta do Telegram"}
+                                                        </Button>
+                                                    ) : (
+                                                        <>
+                                                            <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-2">
+                                                                <span className="text-xs text-blue-600 font-mono truncate flex-1">
+                                                                    {telegramLink}
+                                                                </span>
+                                                                <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(telegramLink)}>
+                                                                    Copiar
+                                                                </Button>
+                                                            </div>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                Abra o link no Telegram e clique em Start. Expira em 15 minutos.
+                                                            </p>
+                                                            <div className="flex gap-2">
+                                                                <Button size="sm" variant="outline" asChild>
+                                                                    <a href={telegramLink} target="_blank">Abrir no Telegram</a>
+                                                                </Button>
+                                                                <Button size="sm" variant="ghost" onClick={gerarLinkTelegram}>
+                                                                    Gerar novo link
+                                                                </Button>
+                                                            </div>
+                                                        </>
+                                                    )
+                                                ) : (
+                                                    <div className="flex items-center justify-between">
+                                                        <p className="text-xs text-green-600 flex items-center gap-1.5">
+                                                            <CheckCircle className="h-3.5 w-3.5" />
+                                                            Conta do Telegram vinculada com sucesso.
+                                                        </p>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            //className="h-6 text-xs text-muted-foreground hover:text-foreground"
+                                                            onClick={() => {
+                                                                setTelegramLink(null);
+                                                                profileForm.setValue("telegramConfigured", false);
+                                                            }}
+                                                        >
+                                                            <RefreshCw className="h-3 w-3 mr-1" />
+                                                            Revincular
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
-                                ))}
+                                }
                             </CardContent>
                         </Card>
                         <div className="flex justify-end gap-2">

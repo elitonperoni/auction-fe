@@ -10,5 +10,6 @@ export interface GetUserByIdResponse {
   languageId: number;
   timeZone: string;
   userNotifications: number[];
-  memberSince: Date
+  memberSince: Date,
+  telegramConfigured: boolean
 }
