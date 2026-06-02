@@ -122,7 +122,6 @@ export default function CreateAuctionForm() {
     setLoading(true);
     await auctionApi.getRegisterDetail(String(auctionId))
       .then((resp) => {
-        debugger
         form.setValue("title", resp.title)
         form.setValue("description", resp.description)
         form.setValue("initialValue", resp.initialValue)

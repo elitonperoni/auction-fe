@@ -45,7 +45,7 @@ export function ResetPasswordForm({
     }    
 
     try {
-      await authApi.resetPassword({ token: requestId!, password: password })
+      await authApi.recoveryPassword({ token: requestId!, password: password })
         .then((resp) => {
         if (resp === true)  {
           ToastSuccess("Senha alterada com sucesso!");

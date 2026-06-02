@@ -81,7 +81,6 @@ export function NotificationBell() {
     ]);
 
     function markAllAsRead() {
-        debugger
         setNotifications(prev =>
             prev.map(n => ({ ...n, isRead: true })));
 
