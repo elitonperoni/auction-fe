@@ -21,5 +21,24 @@
     "edit_title": "Editando Produto",
     "create_title": "Cadastrando Novo Produto",
     "name_label": "Nome do Item"
+  },
+  "condition_product": {
+    "NEW": "Novo / Lacrado",
+    "OPEN_BOX": "Open Box / Reembalado",
+    "LIKE_NEW": "Seminovo",
+    "USED": "Usado",
+    "INCOMPLETE": "Com Avaria / Incompleto",
+    "SALVAGE": "Danificado"
+  },
+  "category_product": {
+    "VEHICLES": "Veículos",
+    "ELECTRONICS": "Eletrônicos",
+    "COMPUTING": "Informática"
+  },
+  "condition_packaging": {
+    "ORIGINAL_INTACT": "Caixa Original Intacta",
+    "ORIGINAL_DAMAGED": "Caixa Original com Avarias",
+    "REPACKAGED": "Reembalado / Genérica",
+    "NO_PACKAGING": "Sem Embalagem"
   }
 }

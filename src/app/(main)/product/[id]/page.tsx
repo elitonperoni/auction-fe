@@ -26,7 +26,7 @@ import {
   TabsTrigger,
 } from "@/src/components/ui/tabs";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
-import { getSignalRConnection } from "@/src/api/hub";
+import { getSignalRConnection, startSignalRConnection } from "@/src/api/hub";
 import BidForm from "@/src/components/bid-form";
 import {
   AuctionProductDetail,
@@ -62,6 +62,7 @@ export default function ProductPage() {
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const [currentZoomIndex, setCurrentZoomIndex] = useState(0);
   const user = useSelector((state: RootState) => state.user);
+  const { dict } = useSelector((state: RootState) => state.user);
 
   useEffect(() => {
     fetchProductDetails(productId);
@@ -92,7 +93,7 @@ export default function ProductPage() {
             amount: newBidAmount,
             date: new Date(newBidTime),
           };
-          showNotifyBid(newBidderId == user.id, newBidderName, newBidAmount);
+          showNotifyBid(newBidderId == user.id, !!product?.isOwner, newBidderName, newBidAmount);
           setIsLoadingBid(false);
 
           return {
@@ -105,7 +106,7 @@ export default function ProductPage() {
         });
       }
     },
-    [productId],
+    [productId, product?.isOwner],
   );
 
   useEffect(() => {
@@ -195,14 +196,8 @@ export default function ProductPage() {
     [productId],
   );
 
-  const ensureValidToken = async () => {
-    await authApi.ensureValidToken();
-  }
-
   useEffect(() => {
     const groupName = String(productId);
-
-    ensureValidToken();
 
     const connection = getSignalRConnection();
 
@@ -214,14 +209,10 @@ export default function ProductPage() {
 
     const setup = async () => {
       try {
-        if (connection.state === signalR.HubConnectionState.Disconnected) {
-          await connection.start();
-        }
+        await startSignalRConnection();
 
-        if (connection.state === signalR.HubConnectionState.Connected) {
-          await connection.invoke("JoinAuctionGroup", groupName);
-          await connection.invoke("SyncAuctionState", groupName);
-        }
+        await connection.invoke("JoinAuctionGroup", groupName);
+        await connection.invoke("SyncAuctionState", groupName);
       } catch (err) {
         console.error(`[${groupName}] Erro ao configurar SignalR:`, err);
       }
@@ -252,8 +243,6 @@ export default function ProductPage() {
   ]);
 
   const handlePlaceBid = async (bidAmount: number) => {
-    ensureValidToken();
-
     const groupName = String(productId);
     const connection = getSignalRConnection();
 
@@ -391,7 +380,14 @@ export default function ProductPage() {
                       </CarouselContent>
 
                       <Dialog open={isZoomOpen} onOpenChange={setIsZoomOpen}>
-                        <DialogContent className="!max-w-none !w-screen !h-screen p-0 bg-white-950/95 border-none shadow-none overflow-hidden outline-none flex items-center justify-center fixed inset-0 translate-x-0 translate-y-0">
+                        <DialogContent
+                          className="!max-w-none !w-screen !h-screen p-0 bg-white-950/95 border-none shadow-none overflow-hidden outline-none flex items-center justify-center fixed inset-0 translate-x-0 translate-y-0"
+                          onPointerDown={(e) => {
+                            if ((e.target as HTMLElement).closest("img") === null) {
+                              setIsZoomOpen(false);
+                            }
+                          }}
+                        >
                           <DialogTitle className="sr-only">
                             Visualização de {product.title}
                           </DialogTitle>
@@ -404,6 +400,7 @@ export default function ProductPage() {
 
                           {product.photos.length > 1 && (
                             <button
+                              onPointerDown={(e) => e.stopPropagation()}
                               onClick={handlePrevious}
                               className="absolute left-4 top-1/2 -translate-y-1/2 z-[60] p-2 text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
                             >
@@ -413,6 +410,7 @@ export default function ProductPage() {
 
                           {product.photos.length > 1 && (
                             <button
+                              onPointerDown={(e) => e.stopPropagation()}
                               onClick={handleNext}
                               className="absolute right-4 top-1/2 -translate-y-1/2 z-[60] p-2 text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
                             >
@@ -433,6 +431,7 @@ export default function ProductPage() {
                                   src={product.photos[currentZoomIndex]}
                                   alt="Zoom"
                                   className="max-w-full max-h-full w-auto h-auto object-contain"
+                                  onPointerDown={(e) => e.stopPropagation()}
                                 />
                               </TransformComponent>
                             </TransformWrapper>
@@ -465,13 +464,13 @@ export default function ProductPage() {
                   <TabsList className="grid w-full grid-cols-2 mb-6">
                     <TabsTrigger
                       value="details"
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 cursor-pointer"
                     >
-                      <CheckCircle2 className="h-4 w-4" /> Detalhes do Produto
+                      <CheckCircle2 className="h-4 w-4 " /> Detalhes do Produto
                     </TabsTrigger>
                     <TabsTrigger
                       value="history"
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 cursor-pointer"
                     >
                       <History className="h-4 w-4" /> Histórico de Lances
                     </TabsTrigger>
@@ -483,18 +482,32 @@ export default function ProductPage() {
                         {product.title}
                       </h1>
 
-                      <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-border">
+                      <div className="grid grid-cols-2 gap-4 pb-6 border-b border-border">
                         <div>
                           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
                             Categoria
                           </p>
-                          <Badge variant="secondary">{product.category}</Badge>
+                          <Badge variant="secondary">{(dict as any)?.category_product?.[product.category]}</Badge>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
-                            Condição
+                            Condição do Produto
                           </p>
-                          <Badge variant="outline">{product.condition}</Badge>
+                          <Badge variant="secondary">{(dict as any)?.condition_product?.[product.conditionProduct]}</Badge>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+                            Condição da Embalagem
+                          </p>
+                          <Badge variant="secondary">{(dict as any)?.condition_packaging?.[product.conditionPackaging]}</Badge>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+                            Garantia
+                          </p>
+                          <Badge variant={product.withoutWarranty ? "destructive" : "secondary"}>
+                            {product.withoutWarranty ? "Sem Garantia" : "Com Garantia"}
+                          </Badge>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
@@ -513,7 +526,7 @@ export default function ProductPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="mb-6">
+                      <div className="mb-4">
                         <h3 className="font-bold text-foreground mb-3">
                           Descrição
                         </h3>
@@ -535,12 +548,12 @@ export default function ProductPage() {
                               {"4.9"} (Avaliação)
                             </p>
                           </div>
-                          <Button
+                          {/* <Button
                             variant="outline"
                             className="border-border bg-transparent"
                           >
                             Contatar Vendedor
-                          </Button>
+                          </Button> */}
                         </div>
                       </Card>
                     </Card>
@@ -552,7 +565,7 @@ export default function ProductPage() {
                       <div className="flex items-center justify-between mb-4">
                         {/* Título à Esquerda */}
                         <h3 className="text-2xl font-bold text-foreground">
-                          Histórico de Lances
+                          Histórico de Lances em Tempo Real
                         </h3>
 
                         {/* Quantidade à Direita */}
@@ -602,7 +615,7 @@ export default function ProductPage() {
               <div className="lg:col-span-1">
                 <Card className="p-6 bg-card border-border sticky top-24">
                   {/* Current Bid */}
-                  <div className="mb-6 pb-6 border-b border-border">
+                  <div className="pb-6 border-b border-border">
                     <p className="text-sm text-muted-foreground tracking-wide mb-2">
                       {product?.bidHistory[0]?.bidderName && "Lance Atual"}
                       {!product?.bidHistory[0]?.bidderName && "Faça um lance agora mesmo!"}
@@ -614,40 +627,55 @@ export default function ProductPage() {
                       Usuário com maior lance: @{product?.bidHistory[0]?.bidderName}
                     </p>)}
                   </div>
-                  {/* Bid Form */}
-                  <BidForm
-                    currentBid={product.currentBid}
-                    minBid={product.minBid}
-                    successBid={bidSuccess}
-                    isLoading={isLoadingBid}
-                    onPlaceBid={handlePlaceBid}
-                  />
-                  {/* Action Buttons e Info Box */}
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      onClick={() => setIsFavorite(!isFavorite)}
-                      variant={isFavorite ? "default" : "outline"}
-                      className="flex-1"
-                    >
-                      <Heart
-                        className={`w-5 h-5 ${isFavorite ? "fill-current" : ""
-                          }`}
+
+                  {product.isOwner &&
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Este leilão percente a você!
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Acompanhe os lances recebidos abaixo na aba Histórico de Lances
+                      </p>
+                    </>
+                  }
+
+                  {!product.isOwner && (
+                    <>
+                      <BidForm
+                        currentBid={product.currentBid}
+                        minBid={product.minBid}
+                        successBid={bidSuccess}
+                        isLoading={isLoadingBid}
+                        onPlaceBid={handlePlaceBid}
                       />
-                      Favoritar
-                    </Button>
-                    <Button onClick={handleShare} variant="outline" className="flex-1 bg-transparent">
-                      <Share2 className="w-5 h-5" />
-                      Compartilhar
-                    </Button>
-                  </div>
-                  <Alert className="mt-6 bg-muted border-border">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
-                    <AlertDescription className="text-foreground">
-                      ✓ Pagamento seguro garantido
-                      <br />✓ Autenticidade verificada
-                      <br />✓ Frete incluído na venda
-                    </AlertDescription>
-                  </Alert>
+
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          onClick={() => setIsFavorite(!isFavorite)}
+                          variant={isFavorite ? "default" : "outline"}
+                          className="flex-1"
+                        >
+                          <Heart
+                            className={`w-5 h-5 ${isFavorite ? "fill-current" : ""
+                              }`}
+                          />
+                          Favoritar
+                        </Button>
+                        <Button onClick={handleShare} variant="outline" className="flex-1 bg-transparent">
+                          <Share2 className="w-5 h-5" />
+                          Compartilhar
+                        </Button>
+                      </div>
+                      <Alert className="mt-6 bg-muted border-border">
+                        <CheckCircle2 className="h-4 w-4 text-primary" />
+                        <AlertDescription className="text-foreground">
+                          ✓ Pagamento seguro garantido
+                          <br />✓ Autenticidade verificada
+                          <br />✓ Frete incluído na venda
+                        </AlertDescription>
+                      </Alert>
+                    </>
+                  )}
                 </Card>
               </div>
             </div>
@@ -659,21 +687,30 @@ export default function ProductPage() {
 
   function showNotifyBid(
     isBidOwner: boolean,
+    isAuctionOwner: boolean,
     newBidderName: string,
     newBidAmount: number,
   ) {
     if (isBidOwner) {
       ToastSuccess(`Lance processado com sucesso!`);
-      setBidSuccess(true);
-      setTimeout(() => setBidSuccess(false), 3000);
-      return;
     }
-
-    ToastSuccess(
-      `Lance superado por ${newBidderName} R$ ${newBidAmount.toLocaleString(
-        "pt-BR",
-        { style: "currency", currency: "BRL" },
-      )}`,
-    );
+    else if (isAuctionOwner) {
+      ToastSuccess(
+        `Novo lance recebido neste item de ${newBidderName} R$ ${newBidAmount.toLocaleString(
+          "pt-BR",
+          { style: "currency", currency: "BRL" },
+        )}`,
+      );
+    }
+    else {
+      ToastInfo(
+        `Lance superado por ${newBidderName} R$ ${newBidAmount.toLocaleString(
+          "pt-BR",
+          { style: "currency", currency: "BRL" },
+        )}`,
+      );
+    }
+    setBidSuccess(true);
+    setTimeout(() => setBidSuccess(false), 3000);
   }
 }

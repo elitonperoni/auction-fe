@@ -1,25 +1,44 @@
 {
-  "common": {
-    "loading": "Carregando...",
-    "save": "Salvar",
-    "cancel": "Cancelar"
+ "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel"
   },
   "main": {
-    "title" : "Find the best products",
-    "subtitle" : "Join exciting auctions and buy the best items."
+    "title": "Find the best products",
+    "subtitle": "Join exciting auctions and buy the best items."
   },
   "auction": {
-    "title": "Sala de Leilão",
-    "place_bid": "Fazer Lance",
-    "update_auction": "Editar leilão",
-    "save_auction": "Cadastrar leilão",
-    "current_bid": "Lance Atual",
-    "bid_success": "Seu lance foi registrado com sucesso!",
-    "bid_error": "Erro ao processar lance."
+    "title": "Auction Room",
+    "place_bid": "Place Bid",
+    "update_auction": "Edit Auction",
+    "save_auction": "Register Auction",
+    "current_bid": "Current Bid",
+    "bid_success": "Your bid was successfully placed!",
+    "bid_error": "Error processing bid."
   },
   "product": {
-    "edit_title": "Editando Produto",
-    "create_title": "Cadastrando Novo Produto",
-    "name_label": "Nome do Item"
+    "edit_title": "Editing Product",
+    "create_title": "Registering New Product",
+    "name_label": "Item Name"
+  },
+  "condition_product": {
+    "NEW": "New / Sealed",
+    "OPEN_BOX": "Open Box / Repackaged",
+    "LIKE_NEW": "Like New",
+    "USED": "Used",
+    "INCOMPLETE": "Damaged / Incomplete",
+    "SALVAGE": "Salvage / Damaged"
+  },
+  "category_product": {
+    "VEHICLES": "Vehicles",
+    "ELECTRONICS": "Electronics",
+    "COMPUTING": "Computing"
+  },
+  "condition_packaging": {
+    "ORIGINAL_INTACT": "Intact Original Box",
+    "ORIGINAL_DAMAGED": "Damaged Original Box",
+    "REPACKAGED": "Repackaged / Generic",
+    "NO_PACKAGING": "No Packaging"
   }
 }

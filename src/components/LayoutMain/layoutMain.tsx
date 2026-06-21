@@ -1,6 +1,6 @@
 "use client";
 
-import { Gavel } from "lucide-react";
+import { Gavel, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { authApi } from "@/src/api";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,7 @@ import {
 } from "../ui/navigation-menu";
 import React from "react";
 import { RoutesScreenPaths } from "@/src/utils/routesPaths";
+import { NotificationBell } from "./components/notificationBell";
 
 export function LayoutMain({
   children,
@@ -93,8 +94,8 @@ export function LayoutMain({
                         </ListItem>
                       </ul>
                     </NavigationMenuContent>
-                  )}             
-                       
+                  )}
+
                 </NavigationMenuItem>
               </NavigationMenuList>
 
@@ -108,7 +109,20 @@ export function LayoutMain({
               </button>
             </NavigationMenu>
 
-            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+            <div className="flex items-center gap-3 sm:gap-4 shrink-0 min-w-0">
+              {user.isAuthenticated && (
+                <>
+                  <NotificationBell />
+                  {/* Botão de Perfil */}
+                  <Link
+                    href={`/user/${user.id}`}
+                    className="text-primary-foreground hover:opacity-80 transition-opacity flex items-center justify-center"
+                    title="Meu Perfil"
+                  >
+                    <UserCircle className="h-6 w-6" />
+                  </Link>
+                </>
+              )}
               <div className="text-primary-foreground font-medium text-sm sm:text-base">
                 <UserGreeting
                   isAuthenticated={user.isAuthenticated}

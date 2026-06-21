@@ -8,7 +8,6 @@ import {
 } from "../../ui/tooltip";
 import { LogIn, LogOut } from "lucide-react";
 import { Button } from "../../ui/button";
-import LanguageSwitcher from "../../LanguageSwitcher/languageSwitcher";
 
 interface UserGreeting {
   readonly isAuthenticated: boolean;
@@ -33,7 +32,8 @@ export default function UserGreeting({
 
   return (
     <div className="flex items-center gap-4">
-      {/* <LanguageSwitcher/> */} 
+      {/* TODO em breve*/}
+      {/* <ConfigButton/>    */}
       <div className="text-primary-foreground font-medium">
         {isAuthenticated ? `Olá ${username}!` : "Convidado"}
       </div>

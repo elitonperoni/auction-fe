@@ -27,7 +27,7 @@ export function RecoveryPasswordForm({
     setIsLoading(true);
 
     try {
-      await authApi.recoveryPassword({ email: email }).then((resp) => {
+      await authApi.sendRecoveryPasswordEmail({ email: email }).then((resp) => {
         if (resp === true) {
           ToastSuccess("Email de alteração de senha enviado com sucesso!");
           setEmail("");

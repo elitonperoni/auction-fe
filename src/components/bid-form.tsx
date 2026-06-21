@@ -40,7 +40,7 @@ export default function BidForm({
     setError("");
     setTermsAccepted(false);
 
-    const bid = Number.parseFloat(bidAmount); // 1. Validação: Valor numérico
+    const bid = Number.parseFloat(bidAmount); 
 
     if (!bidAmount || isNaN(bid)) {
       setError("Por favor, digite um valor numérico válido para o lance.");
@@ -58,28 +58,19 @@ export default function BidForm({
       return;
     }
 
-    // 3. Validação: Checa o lance mínimo (Normalmente, se for maior que o atual, já cumpre o mínimo, mas é bom manter)
     if (bid < minBid) {
       setError(`Lance mínimo é R$ ${minBid.toLocaleString("pt-BR")}`);
       return;
     }
-
-    // 4. Ação do SignalR: Chama a função do componente pai (ProductPage)
-    // para que ela use o connection.invoke()
     onPlaceBid(bid);
-    //setIsLoading(false);
-
-    // 5. Feedback e Limpeza
-    //setSuccess(true); // Assumimos sucesso momentaneamente, mas o ideal é que o 'success'
-    // seja definido no componente pai APÓS a confirmação do Hub.
     setBidAmount("");
-    //setTimeout(() => setSuccess(false), 3000);
-  }; // Ajuste nas sugestões para garantir que sejam maiores que o lance atual
+  
+  }; 
 
-  const nextMinBid = currentBid + 1;
+  const nextMinBid = currentBid * 1.01;
 
   const suggestedBids = [
-    nextMinBid,
+    Math.round(nextMinBid),
     Math.round(nextMinBid * 1.1),
     Math.round(nextMinBid * 1.2),
   ]
@@ -163,6 +154,7 @@ export default function BidForm({
         </label>
       </div>
       <ButtonCustom
+        className="w-full"
         disabled={!termsAccepted || isEmpty(bidAmount)}
         isLoading={isLoading}
         onClick={handleSubmitBid}
