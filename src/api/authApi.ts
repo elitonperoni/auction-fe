@@ -3,7 +3,7 @@ import { LoginRequest } from "../models/request/authRequest";
 import api from "./api";
 import { store } from "../store/store";
 import { setUser, updateExpiration } from "../store/slices/userSlice";
-import { RegisterRequest } from "../models/request/registerRequest";
+import { RegisterRequest, RegisterUserResponse } from "../models/request/registerRequest";
 import { SendEmailRecoveryPasswordRequest, RecoveryPasswordRequest, ResetPasswordRequest } from "../models/request/resetPasswordRequest";
 import { GetUserByIdResponse } from "../models/respose/getUserByIdResponse";
 
@@ -79,8 +79,16 @@ export class AuthApi {
   }
 }
 
-  async register(request: RegisterRequest): Promise<any> {
-    return await api.post(`${baseRoute}/register`, request);
+  async register(request: RegisterRequest): Promise<RegisterUserResponse> {
+    const response = await api.post(`${baseRoute}/register`, request);
+    const data = response.data;
+    const value = data?.value ?? data?.Value ?? data;
+
+    return {
+      userId: value?.userId ?? value?.UserId,
+      orderId: value?.orderId ?? value?.OrderId,
+      checkoutUrl: value?.checkoutUrl ?? value?.CheckoutUrl,
+    };
   }
 
   async sendRecoveryPasswordEmail(request: SendEmailRecoveryPasswordRequest): Promise<boolean> {

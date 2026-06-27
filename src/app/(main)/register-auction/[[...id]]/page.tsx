@@ -39,7 +39,7 @@ import { Checkbox } from "@/src/components/ui/checkbox";
 import { ConditionProductEnum } from "@/src/utils/enums/conditionProductEnum";
 import { PackagingConditionEnum } from "@/src/utils/enums/conditionPackaging";
 import { CategoryProductsEnum } from "@/src/utils/enums/categoryProductEnum";
-import { State, City } from "country-state-city";
+import { City, State } from "country-state-city";
 
 export default function CreateAuctionForm() {
   const [originalPhotos, setOriginalPhotos] = useState<string[]>([]);
