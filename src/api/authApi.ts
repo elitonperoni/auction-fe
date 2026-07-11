@@ -12,27 +12,25 @@ const timeToExpireToken = (1 * 60 * 1000);
 export class AuthApi { 
   async login(request: LoginRequest): Promise<boolean> {
     try {
-      await api.post(`${baseRoute}/login`, request).then((resp) => {
-        const response = resp.data;
+      const resp = await api.post(`${baseRoute}/login`, request);
+      const response = resp.data;
 
-        const expirationTime = Date.now() + (timeToExpireToken);
+      if (!response) {
+        ToastError("Falha ao realizar login");
+        return false;
+      }
 
-        if (response) {
-          store.dispatch(
-            setUser({
-              id: response.id,
-              name: response.name,
-              expiresAt: expirationTime,
-              isAuthenticated: true
-            }),
-          );
+      const expirationTime = Date.now() + timeToExpireToken;
 
-          return true;
-        } else {
-          ToastError("Falha ao realizar login");
-          return false;
-        }
-      });
+      store.dispatch(
+        setUser({
+          id: response.id,
+          name: response.name,
+          expiresAt: expirationTime,
+          isAuthenticated: true,
+        }),
+      );
+
       return true;
     } catch {
       return false;
