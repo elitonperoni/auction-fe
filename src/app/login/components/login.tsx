@@ -1,7 +1,6 @@
 "use client"; // <-- MUDANÇA: Necessário para usar estado e eventos
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/src/lib/utils";
 import { authApi } from "@/src/api";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -30,23 +29,21 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
 
     try {
-      await authApi.login({ email: email, password: password }).then((resp) => {
-        if (resp === true) {
-          router.push("/");
-        } else {
-          setError("Usuário ou senha inválidos");
-        }
+      const authenticated = await authApi.login({ email, password });
 
-        setIsLoading(false);
-      });
+      if (authenticated) {        
+        window.location.replace("/");
+        return;
+      }
+
+      setError("Usuário ou senha inválidos");
+      setIsLoading(false);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
