@@ -196,7 +196,11 @@ export default function Home() {
             </>
           ) : (
             auctionList?.map((product) => (
-              <Link key={product.id} href={`/product/${product.id}`}>
+              <Link
+                key={product.id}
+                href={`/product/${product.id}`}
+                prefetch={false}
+              >
                 <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer h-full flex flex-col bg-card border-border hover:border-primary/30">
                   {/* Product Image */}
                   <div className="relative overflow-hidden bg-muted h-48">
